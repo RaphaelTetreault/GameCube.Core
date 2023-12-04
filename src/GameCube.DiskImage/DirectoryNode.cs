@@ -1,4 +1,5 @@
 ﻿using Manifold.IO;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -31,8 +32,10 @@ namespace GameCube.DiskImage
         /// </summary>
         internal void AlphabetizeChildrenRecursively()
         {
-            // Alphabetize children
-            Children = Children.OrderBy(child => child.Name).ToList();
+            // Alphabetize own children
+            Children = Children
+                .OrderBy(child => child.Name.Value)
+                .ToList();
 
             // Recursively alphabetive children's children
             foreach (var child in Children)
@@ -46,12 +49,27 @@ namespace GameCube.DiskImage
         /// <param name="writer">The writer to write to.</param>
         internal void SerializeFileSystemRecursively(EndianBinaryWriter writer)
         {
+            // Serialize self (ie: root)
             Serialize(writer);
+            Console.WriteLine($"Next {DirectoryLastChildIndex}, {GetResolvedPath()}");
+
+            // Serialize children recursively
             foreach (var child in Children)
+            {
                 if (child is DirectoryNode directoryNode)
+                {
                     directoryNode.SerializeFileSystemRecursively(writer);
-                else // file
-                    child.Serialize(writer);
+                }
+                else if (child is FileNode fileNode)
+                {
+                    fileNode.Serialize(writer);
+                    Console.WriteLine(child.GetResolvedPath());
+                }
+                else
+                {
+                    throw new FileSystemException("Unable to serialize node.");
+                }
+            }
         }
 
         /// <summary>
@@ -60,40 +78,58 @@ namespace GameCube.DiskImage
         /// <param name="writer">The writer to write to.</param>
         internal void SerializeNamesRecursively(EndianBinaryWriter writer)
         {
+            // Serialize self (ie: root)
             writer.Write<AsciiCString>(Name);
+
+            // Serialize children recursively
             foreach (var child in Children)
+            {
                 if (child is DirectoryNode directoryNode)
+                {
                     directoryNode.SerializeNamesRecursively(writer);
-                else // file
+                }
+                else if (child is FileNode fileNode)
+                {
                     writer.Write<AsciiCString>(child.Name);
+                }
+                else
+                {
+                    throw new FileSystemException("Unable to serialize node.");
+                }
+            }
         }
 
         /// <summary>
-        ///     Prepares all node's below this one's (inclusize) pointers and other important serialization data.
+        ///     Prepares this node and child nodes' type, name offset pointer, and node index number in
+        ///     linearized graph for deserialization.
         /// </summary>
-        /// <remarks>
-        ///     This function needs a better name.
-        /// </remarks>
         /// <param name="nameTableBasePointer"></param>
-        /// <param name="currentIndex"></param>
-        internal void PrepareFileSystemDataRecursively(Pointer nameTableBasePointer, int currentIndex)
+        /// <param name="currentNodeIndex">
+        ///     The current node index in linearized tree.Default is 1 (to account for root).
+        /// </param>
+        internal int PrepareFileSystemDataRecursively(Pointer nameTableBasePointer, int currentNodeIndex = 1)
         {
-            currentIndex++;
-            PrepareFileSystemData(nameTableBasePointer, currentIndex);
+            PrepareFileSystemData(nameTableBasePointer, currentNodeIndex);
 
             foreach (var child in Children)
+            {
+                currentNodeIndex++;
+
                 if (child is DirectoryNode directoryNode)
-                    directoryNode.PrepareFileSystemDataRecursively(nameTableBasePointer, currentIndex);
+                    currentNodeIndex = directoryNode.PrepareFileSystemDataRecursively(nameTableBasePointer, currentNodeIndex);
                 else
-                    child.PrepareFileSystemData(nameTableBasePointer, currentIndex);
+                    child.PrepareFileSystemData(nameTableBasePointer, currentNodeIndex);
+            }
+
+            return currentNodeIndex;
         }
 
-        internal override void PrepareFileSystemData(Pointer nameTableBasePointer, int currenIndex)
+        internal override void PrepareFileSystemData(Pointer nameTableBasePointer, int currentIndex)
         {
-            base.PrepareFileSystemData(nameTableBasePointer, currenIndex);
+            base.PrepareFileSystemData(nameTableBasePointer, currentIndex);
             //
             DirectoryParentNameOffset = (Parent is null) ? 0 : Parent.NameOffset;
-            DirectoryLastChildIndex = GetChildCountRecursively() + currenIndex;
+            DirectoryLastChildIndex = GetChildCountRecursively() + currentIndex;
         }
 
         /// <summary>

@@ -110,7 +110,7 @@ namespace GameCube.DiskImage
 
             // Write actual file system
             Pointer nameTableBasePointer = namesAddressRange.startAddress;
-            RootNode.PrepareFileSystemDataRecursively(nameTableBasePointer, 0);
+            RootNode.PrepareFileSystemDataRecursively(nameTableBasePointer);
             RootNode.SetAsRootNode();
             //
             writer.JumpToAddress(fileSystemNodesAddressRange.startAddress);
@@ -354,7 +354,6 @@ namespace GameCube.DiskImage
                 file.WriteData(writer);
             }
         }
-
 
         // TODO: maybe get rid of this?
         public int GetNodeCount() => RootNode.GetNodeCount();
