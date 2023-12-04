@@ -51,7 +51,6 @@ namespace GameCube.DiskImage
         {
             // Serialize self (ie: root)
             Serialize(writer);
-            Console.WriteLine($"Next {DirectoryLastChildIndex}, {GetResolvedPath()}");
 
             // Serialize children recursively
             foreach (var child in Children)
@@ -63,7 +62,6 @@ namespace GameCube.DiskImage
                 else if (child is FileNode fileNode)
                 {
                     fileNode.Serialize(writer);
-                    Console.WriteLine(child.GetResolvedPath());
                 }
                 else
                 {
