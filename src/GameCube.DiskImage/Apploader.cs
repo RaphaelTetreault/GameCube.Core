@@ -7,12 +7,12 @@ namespace GameCube.DiskImage
         IBinaryAddressable,
         IBinarySerializable
     {
-        private AsciiCString dateTime; // 10 bytes YYYY/MM/DD (?)
+        private AsciiCString dateTime = new(); // 10 bytes YYYY/MM/DD (?)
         private Pointer entryAddress;
         private int size;
         private int trailerSize;
         //
-        private byte[] raw;
+        private byte[] raw = [];
 
         public const int Address = 0x2440;
         public const int HeaderSize = 0x20;

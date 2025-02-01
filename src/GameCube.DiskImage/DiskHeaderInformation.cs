@@ -13,7 +13,7 @@ namespace GameCube.DiskImage
         IBinaryAddressable,
         IBinarySerializable
     {
-        private byte[] bi2Bin;
+        private byte[] bi2Bin = [];
 
         public const int Address = 0x440;
         public const int Size = 0x2000;

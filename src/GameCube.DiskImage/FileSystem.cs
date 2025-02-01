@@ -9,7 +9,7 @@ namespace GameCube.DiskImage
         IBinaryAddressable,
         IBinarySerializable
     {
-        private byte[] raw = Array.Empty<byte>();
+        private byte[] raw = [];
         private DirectoryNode root = new();
         private AddressRange fileSystemNodesAddressRange;
         private AddressRange namesAddressRange;
@@ -23,7 +23,7 @@ namespace GameCube.DiskImage
 
         public void Deserialize(EndianBinaryReader reader)
         {
-            FileSystemNode[] nodes = Array.Empty<FileSystemNode>();
+            FileSystemNode[] nodes = [];
 
             this.RecordStartAddress(reader);
             fileSystemNodesAddressRange.RecordStartAddress(reader);
@@ -69,7 +69,7 @@ namespace GameCube.DiskImage
                     {
                         var directory = currentNode as DirectoryNode;
                         Assert.IsTrue(directory != null);
-                        directoryStack.Push(directory);
+                        directoryStack.Push(directory!);
                     }
                 }
             }
@@ -162,7 +162,7 @@ namespace GameCube.DiskImage
             DirectoryNode directoryNode = RootNode;
             string[] pathSegments = DecomposePath(destinationFilePath);
             string[] directories = pathSegments[..^1];
-            string fileName = pathSegments[pathSegments.Length - 1];
+            string fileName = pathSegments[^1];
 
             foreach (string directory in directories)
             {
@@ -196,7 +196,7 @@ namespace GameCube.DiskImage
             }
 
             // Add file
-            FileNode fileNode = new FileNode()
+            FileNode fileNode = new()
             {
                 Name = fileName,
                 Data = fileData,
@@ -240,7 +240,7 @@ namespace GameCube.DiskImage
             DirectoryNode directoryNode = RootNode;
             string[] pathSegments = DecomposePath(nodePath);
             string[] directories = pathSegments[..^1];
-            string nodeName = pathSegments[pathSegments.Length - 1];
+            string nodeName = pathSegments[^1];
 
             foreach (string directory in directories)
             {
@@ -283,7 +283,7 @@ namespace GameCube.DiskImage
         /// <exception cref="ArgumentException">
         ///     Thrown if <paramref name="path"/> is null, empty, or whitespace.
         /// </exception>
-        private string[] DecomposePath(string path)
+        private static string[] DecomposePath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -309,7 +309,7 @@ namespace GameCube.DiskImage
         /// </returns>
         public DirectoryNode[] GetDirectories()
         {
-            List<DirectoryNode> directories = new List<DirectoryNode>();
+            List<DirectoryNode> directories = [];
             RootNode.GetDirectories(directories);
             return directories.ToArray();
         }
@@ -322,7 +322,7 @@ namespace GameCube.DiskImage
         /// </returns>
         public FileNode[] GetFiles()
         {
-            List<FileNode> files = new List<FileNode>();
+            List<FileNode> files = [];
             RootNode.GetFiles(files);
             return files.ToArray();
         }

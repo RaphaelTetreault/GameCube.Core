@@ -21,12 +21,12 @@ namespace GameCube.DiskImage
         private byte version;
         private byte audioStreaming;
         private byte streamBufferSize;
-        private byte[] unused_0x0a; // size: 0x12
+        private byte[] unused_0x0a = []; // size: 0x12
         private uint dvdMagicWord; // 0xc2339f3d
-        private AsciiCString gameName; // Buffer size: 0x03e0
+        private AsciiCString gameName = new(); // Buffer size: 0x03e0
         private Offset debugMonitorOffset;
         private Pointer debugMonitorLoadAddress;
-        private byte[] unused_0x0408; // size: 0x18
+        private byte[] unused_0x0408 = []; // size: 0x18
         private Pointer mainExecutablePtr;
         private Pointer fileSystemPtr;
         private uint fileSystemSize;
@@ -37,7 +37,7 @@ namespace GameCube.DiskImage
         private uint zero_0x043C;
         // Structure (ie: above) raw. See YAGCD "DVD Structure"
         // https://www.gc-forever.com/yagcd/chap13.html
-        private byte[] bootBin;
+        private byte[] bootBin = [];
 
         private const int unused_0x0a_size = 0x12;
         private const int unused_0x0408_size = 0x18;

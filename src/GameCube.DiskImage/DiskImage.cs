@@ -21,7 +21,7 @@ namespace GameCube.DiskImage
         private DiskHeaderInformation? diskHeaderInformation;
         private Apploader? apploader;
         private FileSystem? fileSystem;
-        private byte[] mainExecutableRaw = Array.Empty<byte>();
+        private byte[] mainExecutableRaw = [];
         //private MainExecutable mainExecutable;
 
         public const Endianness endianness = Endianness.BigEndian;

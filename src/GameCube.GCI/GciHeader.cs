@@ -117,7 +117,9 @@ namespace GameCube.GCI
         {
             string time = SaveTime.ToString("yyyy/MM/dd hh:mm.ss");
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
             string name = System.Reflection.Assembly.GetEntryAssembly().GetName().Name;
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
             name = name is null ? string.Empty : name;
             string comment = $"Created by {name} at {time}.";
@@ -164,7 +166,7 @@ namespace GameCube.GCI
             bool fileNameFits = internalFileName.Length <= InternalFileNameLength;
             if (!fileNameFits)
             {
-                internalFileName = internalFileName.Substring(0, InternalFileNameLength);
+                internalFileName = internalFileName[..InternalFileNameLength];
             }
 
             // Set file name
@@ -184,20 +186,15 @@ namespace GameCube.GCI
         /// <exception cref="NotImplementedException">
         ///     Thrown if <paramref name="gameID"/> region code is not implemented.
         /// </exception>
-        private System.Text.Encoding GetTextEncoding(GameID gameID)
+        private static System.Text.Encoding GetTextEncoding(GameID gameID)
         {
-            switch (gameID.RegionCode)
+            return gameID.RegionCode switch
             {
-                case 'J':
-                    return ShiftJisEncoding;
-
-                case 'E':
-                case 'P':
-                    return Windows1252Encoding;
-
-                default:
-                    throw new NotImplementedException($"Unhandled region code '{gameID.RegionCode}'.");
-            }
+                'E' => Windows1252Encoding,
+                'J' => ShiftJisEncoding,
+                'P' => Windows1252Encoding,
+                _ => throw new NotImplementedException($"Unhandled region code '{gameID.RegionCode}'."),
+            };
         }
         public System.Text.Encoding GetTextEncoding()
         {
