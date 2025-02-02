@@ -1,5 +1,6 @@
 ﻿using Manifold;
 using Manifold.IO;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -20,6 +21,10 @@ public struct BoundingSphere :
 
     // PROPERTIES
     public AddressRange AddressRange { get; set; }
+
+    public BoundingSphere()
+    {
+    }
 
     public BoundingSphere(Vector3 origin, float radius)
     {
@@ -54,7 +59,7 @@ public struct BoundingSphere :
         AddressRange = addressRange;
     }
 
-    public void PrintMultiLine(System.Text.StringBuilder builder, int indentLevel = 0, string indent = "\t")
+    public readonly void PrintMultiLine(System.Text.StringBuilder builder, int indentLevel = 0, string indent = "\t")
     {
         builder.AppendLineIndented(indent, indentLevel, nameof(BoundingSphere));
         indentLevel++;
@@ -62,22 +67,20 @@ public struct BoundingSphere :
         builder.AppendLineIndented(indent, indentLevel, $"{nameof(radius)}: {radius}");
     }
 
-    public string PrintSingleLine()
+    public readonly string PrintSingleLine()
     {
         return $"{nameof(BoundingSphere)}({nameof(origin)}: {origin}, {nameof(radius)}: {radius})";
     }
 
-    public override string ToString() => PrintSingleLine();
+    public override readonly string ToString() => PrintSingleLine();
 
     public static BoundingSphere CreateBoundingSphereFromPoints(IEnumerable<Vector3> points, int length)
     {
-        if (points == null)
-            throw new System.ArgumentNullException(nameof(points));
-        if (length <= 0)
-            throw new System.ArgumentOutOfRangeException(nameof(length));
+        ArgumentNullException.ThrowIfNull(points);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
 
         float radius = 0;
-        Vector3 center = new Vector3();
+        Vector3 center = new();
         float lengthReciprocal = 1f / length;
 
         // Find the center of gravity for the point 'cloud'.

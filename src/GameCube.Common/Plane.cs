@@ -30,7 +30,7 @@ namespace GameCube.Common
             reader.Read(ref origin);
         }
 
-        public void Serialize(EndianBinaryWriter writer)
+        public readonly void Serialize(EndianBinaryWriter writer)
         {
             writer.Write(distance);
             writer.Write(normal);
@@ -51,7 +51,7 @@ namespace GameCube.Common
             this.distance = -dotProduct;
         }
 
-        public Plane GetMirror()
+        public readonly Plane GetMirror()
         {
             return GetPlaneMirrored(this);
         }
@@ -65,7 +65,7 @@ namespace GameCube.Common
             return mirroredPlane;
         }
 
-        public void PrintMultiLine(System.Text.StringBuilder builder, int indentLevel = 0, string indent = "\t")
+        public readonly void PrintMultiLine(System.Text.StringBuilder builder, int indentLevel = 0, string indent = "\t")
         {
             builder.AppendLineIndented(indent, indentLevel, nameof(Plane));
             indentLevel++;
@@ -74,12 +74,12 @@ namespace GameCube.Common
             builder.AppendLineIndented(indent, indentLevel, $"{nameof(distance)}: {distance}");
         }
 
-        public string PrintSingleLine()
+        public readonly string PrintSingleLine()
         {
             return nameof(Plane);
         }
 
-        public override string ToString() => PrintSingleLine();
+        public override readonly string ToString() => PrintSingleLine();
 
     }
 }
