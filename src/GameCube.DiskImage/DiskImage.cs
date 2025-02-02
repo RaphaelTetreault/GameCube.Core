@@ -17,10 +17,10 @@ namespace GameCube.DiskImage
         IBinarySerializable
     {
         // Proper file structure
-        private DiskHeader? diskHeader;
-        private DiskHeaderInformation? diskHeaderInformation;
-        private Apploader? apploader;
-        private FileSystem? fileSystem;
+        private DiskHeader diskHeader = new();
+        private DiskHeaderInformation diskHeaderInformation = new();
+        private Apploader apploader = new();
+        private FileSystem fileSystem = new();
         private byte[] mainExecutableRaw = [];
         //private MainExecutable mainExecutable;
 
@@ -31,10 +31,10 @@ namespace GameCube.DiskImage
         public string FileExtension => ".iso";
         public string FileName { get; set; } = string.Empty;
 
-        public Apploader? Apploader { get => apploader; set => apploader = value; }
-        public DiskHeader? DiskHeader { get => diskHeader; set => diskHeader = value; }
-        public DiskHeaderInformation? DiskHeaderInformation { get => diskHeaderInformation; set => diskHeaderInformation = value; }
-        public FileSystem? FileSystem { get => fileSystem; set => fileSystem = value; }
+        public Apploader Apploader { get => apploader; set => apploader = value; }
+        public DiskHeader DiskHeader { get => diskHeader; set => diskHeader = value; }
+        public DiskHeaderInformation DiskHeaderInformation { get => diskHeaderInformation; set => diskHeaderInformation = value; }
+        public FileSystem FileSystem { get => fileSystem; set => fileSystem = value; }
         public byte[] MainExecutableRaw => mainExecutableRaw;
         //public MainExecutable MainExecutable { get => mainExecutable; set => mainExecutable = value; }
 

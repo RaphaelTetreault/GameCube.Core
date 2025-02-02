@@ -305,7 +305,7 @@ namespace GameCube.DiskImage
         ///     Retrieves all directories in this file system.
         /// </summary>
         /// <returns>
-        ///     Array containing all directory nodes in this file ssytem.
+        ///     Array containing all directory nodes in this file system.
         /// </returns>
         public DirectoryNode[] GetDirectories()
         {
