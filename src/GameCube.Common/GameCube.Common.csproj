@@ -4,4 +4,8 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Manifold.Core\src\Manifold.IO\Manifold.IO.csproj" />
+    <ProjectReference Include="..\..\..\Manifold.Core\src\Manifold\Manifold.csproj" />
+  </ItemGroup>
 </Project>
