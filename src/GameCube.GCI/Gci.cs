@@ -37,9 +37,10 @@ namespace GameCube.GCI
 
         public Texture Banner { get; protected set; } = new();
         public abstract string Comment { get; set; }
+        //public abstract Endianness DataEndianness { get; set; }
         public TBinarySerializable FileData { get; set; } = new();
         public GciHeader Header { get; protected set; } = new();
-        public Texture[] Icons { get; protected set; } = Array.Empty<Texture>();
+        public Texture[] Icons { get; protected set; } = [];
 
 
         public abstract void DeserializeCommentAndImages(EndianBinaryReader reader);
@@ -47,23 +48,25 @@ namespace GameCube.GCI
 
         public virtual void Deserialize(EndianBinaryReader reader)
         {
-            // Read header
+            // Read header using GCI endianness
             Header.Deserialize(reader);
-            //
             DeserializeCommentAndImages(reader);
-            // Read data
+            // Read file data using correct endianness
             var correctEndianReader = new EndianBinaryReader(reader.BaseStream, FileData.Endianness);
             FileData.Deserialize(correctEndianReader);
+            // TODO 2025-02-02: can the data even be a different endianness from the GCI container?
+            Assert.IsTrue(FileData.Endianness == Endianness, "Proved that data can differ in endianness from container.");
         }
         public virtual void Serialize(EndianBinaryWriter writer)
         {
-            // Write headder
+            // Write header using GCI endianness
             writer.Write(Header);
-            //
             SerializeCommentAndImages(writer);
             // Write file data using correct endianness
             var correctEndianWriter = new EndianBinaryWriter(writer.BaseStream, FileData.Endianness);
             correctEndianWriter.Write(FileData);
+            // TODO 2025-02-02: can the data even be a different endianness from the GCI container?
+            Assert.IsTrue(FileData.Endianness == Endianness, "Proved that data can differ in endianness from container.");
 
             // Pad to GC block alginment + "header" bytes.
             int unalignedBytes = (int)writer.BaseStream.Position % MinimumBlockSize;
@@ -182,6 +185,7 @@ namespace GameCube.GCI
                 WriteDirectColorTexture(writer, icon);
             }
         }
+        
         // Indirect color write. Both as palette+indexes write, or as functions to get data if not in that order
         public void WriteSharedIndirectColorIcons(EndianBinaryWriter writer)
         {
@@ -197,7 +201,7 @@ namespace GameCube.GCI
             int count = Icons.Length;
             Assert.IsTrue(count <= 8);
 
-            Texture combinedIcons = new Texture(IconWidth, IconHeight * count);
+            Texture combinedIcons = new(IconWidth, IconHeight * count);
             for (int i = 0; i < count; i++)
             {
                 int originY = i * IconHeight;
