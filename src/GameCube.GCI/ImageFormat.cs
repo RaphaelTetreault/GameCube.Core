@@ -1,10 +1,12 @@
-﻿namespace GameCube.GCI
+﻿namespace GameCube.GCI;
+
+/// <summary>
+///     Indicates the image format for the GCI.
+/// </summary>
+public enum ImageFormat : ushort
 {
-    public enum ImageFormat : ushort
-    {
-        NoIcon,
-        IndirectColor_SharedPalette,
-        DirectColor,
-        IndirectorColor_UniquePalettes,
-    }
+    NoIcon,
+    IndirectColor_SharedPalette,
+    DirectColor,
+    IndirectorColor_UniquePalettes,
 }
