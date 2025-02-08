@@ -1,85 +1,85 @@
 ﻿using Manifold;
 using Manifold.IO;
-using System;
 using System.Numerics;
 
-namespace GameCube.Common
+namespace GameCube.Common;
+
+/// <summary>
+///     A geometric plane.
+/// </summary>
+public struct Plane :
+    IBinarySerializable
 {
-    [Serializable]
-    public struct Plane :
-        IBinarySerializable
+    /// <summary>
+    ///     The dot product of this plane. 'dot(direction, position)'
+    /// </summary>
+    public float distance;
+    /// <summary>
+    ///     The facing direction of this plane.
+    /// </summary>
+    public Vector3 normal;
+    /// <summary>
+    ///     The origin position of this plane.
+    /// </summary>
+    public Vector3 origin;
+
+
+    public void Deserialize(EndianBinaryReader reader)
     {
-        /// <summary>
-        /// The dot product of this plane. 'dot(direction, position)'
-        /// </summary>
-        public float distance;
-        /// <summary>
-        /// The facing direction of this plane.
-        /// </summary>
-        public Vector3 normal;
-        /// <summary>
-        /// The origin position of this plane.
-        /// </summary>
-        public Vector3 origin;
-
-
-        public void Deserialize(EndianBinaryReader reader)
-        {
-            reader.Read(ref distance);
-            reader.Read(ref normal);
-            reader.Read(ref origin);
-        }
-
-        public readonly void Serialize(EndianBinaryWriter writer)
-        {
-            writer.Write(distance);
-            writer.Write(normal);
-            writer.Write(origin);
-        }
-
-        /// <summary>
-        /// Computes and stores the dotProduct of this Plane.
-        /// </summary>
-        public void ComputeDotProduct()
-        {
-            float dotProduct =
-                normal.X * origin.X +
-                normal.Y * origin.Y +
-                normal.Z * origin.Z;
-
-            // dot product is inverted
-            this.distance = -dotProduct;
-        }
-
-        public readonly Plane GetMirror()
-        {
-            return GetPlaneMirrored(this);
-        }
-
-        public static Plane GetPlaneMirrored(Plane plane)
-        {
-            var mirroredPlane = new Plane();
-            mirroredPlane.distance = -plane.distance;
-            mirroredPlane.normal = -plane.normal;
-            mirroredPlane.origin = plane.origin;
-            return mirroredPlane;
-        }
-
-        public readonly void PrintMultiLine(System.Text.StringBuilder builder, int indentLevel = 0, string indent = "\t")
-        {
-            builder.AppendLineIndented(indent, indentLevel, nameof(Plane));
-            indentLevel++;
-            builder.AppendLineIndented(indent, indentLevel, $"{nameof(origin)}: {origin}");
-            builder.AppendLineIndented(indent, indentLevel, $"{nameof(normal)}: {normal}");
-            builder.AppendLineIndented(indent, indentLevel, $"{nameof(distance)}: {distance}");
-        }
-
-        public readonly string PrintSingleLine()
-        {
-            return nameof(Plane);
-        }
-
-        public override readonly string ToString() => PrintSingleLine();
-
+        reader.Read(ref distance);
+        reader.Read(ref normal);
+        reader.Read(ref origin);
     }
+
+    public readonly void Serialize(EndianBinaryWriter writer)
+    {
+        writer.Write(distance);
+        writer.Write(normal);
+        writer.Write(origin);
+    }
+
+    /// <summary>
+    ///     Computes and stores the dotProduct of this Plane.
+    /// </summary>
+    public void ComputeDotProduct()
+    {
+        float dotProduct =
+            normal.X * origin.X +
+            normal.Y * origin.Y +
+            normal.Z * origin.Z;
+
+        // dot product is inverted
+        this.distance = -dotProduct;
+    }
+
+    public readonly Plane GetMirror()
+    {
+        return GetPlaneMirrored(this);
+    }
+
+    public static Plane GetPlaneMirrored(Plane plane)
+    {
+        var mirroredPlane = new Plane();
+        mirroredPlane.distance = -plane.distance;
+        mirroredPlane.normal = -plane.normal;
+        mirroredPlane.origin = plane.origin;
+        return mirroredPlane;
+    }
+
+    public readonly void PrintMultiLine(System.Text.StringBuilder builder, int indentLevel = 0, string indent = "\t")
+    {
+        builder.AppendLineIndented(indent, indentLevel, nameof(Plane));
+        indentLevel++;
+        builder.AppendLineIndented(indent, indentLevel, $"{nameof(origin)}: {origin}");
+        builder.AppendLineIndented(indent, indentLevel, $"{nameof(normal)}: {normal}");
+        builder.AppendLineIndented(indent, indentLevel, $"{nameof(distance)}: {distance}");
+    }
+
+    public readonly string PrintSingleLine()
+    {
+        return nameof(Plane);
+    }
+
+    public override readonly string ToString() => PrintSingleLine();
+
 }
