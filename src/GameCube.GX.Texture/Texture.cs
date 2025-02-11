@@ -36,17 +36,17 @@ namespace GameCube.GX.Texture
         /// <remarks>
         ///     Organized horizontally left-to-right with subsequent rows stacked vertically.
         /// </remarks>
-        public TextureColor[] Pixels { get; private set; } = new TextureColor[0];
+        public TextureColor[] Pixels { get; private set; } = [];
 
         /// <summary>
         ///     The texture's colour pallete, if texture uses a colour-indexed texture format.
         /// </summary>
-        public Palette Palette { get; private set; } = null;
+        public Palette? Palette { get; private set; } = null;
 
         /// <summary>
         ///     The texture's blocks.
         /// </summary>
-        public Block[] Blocks { get; private set; } = new Block[0];
+        public Block[] Blocks { get; private set; } = [];
 
         /// <summary>
         ///     True if the texture's palette is not null.
@@ -246,7 +246,7 @@ namespace GameCube.GX.Texture
 
         private static Image<Rgba32> ToImage(Texture sourceTexture)
         {
-            Image<Rgba32> image = new Image<Rgba32>(sourceTexture.Width, sourceTexture.Height);
+            Image<Rgba32> image = new(sourceTexture.Width, sourceTexture.Height);
 
             for (int y = 0; y < sourceTexture.Height; y++)
             {
@@ -644,6 +644,15 @@ namespace GameCube.GX.Texture
                 mipmapCount++;
             }
             return mipmapCount;
+        }
+
+        public byte[] GetRawBytes(TextureFormat textureFormat)
+        {
+            var memoryStream = new System.IO.MemoryStream();
+            using var writer = new EndianBinaryWriter(memoryStream, Endianness.BigEndian);
+            Texture.WriteDirectColorTexture(writer, this, textureFormat);
+            byte[] rawData = memoryStream.ToArray();
+            return rawData;
         }
     }
 }
