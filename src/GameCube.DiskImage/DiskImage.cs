@@ -11,7 +11,6 @@ namespace GameCube.DiskImage;
 ///     Represents the root GameCube disk image (ISO/ROM).
 /// </summary>
 public class DiskImage :
-    IBinaryFileType,
     IBinarySerializable
 {
     // Proper file structure
@@ -21,13 +20,6 @@ public class DiskImage :
     private FileSystem fileSystem = new();
     private byte[] mainExecutableRaw = [];
     //private MainExecutable mainExecutable;
-
-    public const Endianness endianness = Endianness.BigEndian;
-
-
-    public Endianness Endianness => endianness;
-    public string FileExtension => ".iso";
-    public string FileName { get; set; } = string.Empty;
 
     public Apploader Apploader { get => apploader; set => apploader = value; }
     public DiskHeader DiskHeader { get => diskHeader; set => diskHeader = value; }
