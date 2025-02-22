@@ -1,76 +1,75 @@
-﻿using System;
-using Manifold.IO;
+﻿using Manifold.IO;
+using System;
 
-namespace GameCube.GX
+namespace GameCube.GX;
+
+/// <summary>
+///     Vertex Attribute Table (GameCube VAT).
+/// </summary>
+public class VertexAttributeTable
 {
-    // GameCube VAT
-    [Serializable]
-    public class VertexAttributeTable
+    // FIELDS
+    private VertexAttributeFormat[] gxVertexAttributeFormats = new VertexAttributeFormat[8];
+
+    // INDEXERS
+    public VertexAttributeFormat this[int i]
     {
-        // FIELDS
-        private VertexAttributeFormat[] gxVertexAttributeFormats = new VertexAttributeFormat[8];
+        get => gxVertexAttributeFormats[i];
+    }
+    public VertexAttributeFormat this[VertexFormat vertexFormat]
+    {
+        get => gxVertexAttributeFormats[(byte)vertexFormat];
+    }
+    public VertexAttributeFormat this[DisplayCommand displayCommand]
+    {
+        get => gxVertexAttributeFormats[displayCommand.VertexFormatIndex];
+    }
 
-        // INDEXERS
-        public VertexAttributeFormat this[int i]
+
+    public VertexAttributeTable(params VertexAttributeFormat[] formats)
+    {
+        if (formats.Length > 8)
+            throw new ArgumentOutOfRangeException();
+
+        // Update formats
+        for (int i = 0; i < formats.Length; i++)
+            gxVertexAttributeFormats[i] = formats[i];
+
+        // Clear old refs
+        for (int i = formats.Length; i < gxVertexAttributeFormats.Length; i++)
+            gxVertexAttributeFormats[i] = null;
+    }
+
+    public bool VatHasAttr(DisplayCommand gxCmd, Attribute attribute)
+    {
+        Assert.IsTrue((byte)gxCmd.VertexFormat < 8);
+
+        if (attribute == 0)
         {
-            get => gxVertexAttributeFormats[i];
+            return false;
         }
-        public VertexAttributeFormat this[VertexFormat vertexFormat]
+        else
         {
-            get => gxVertexAttributeFormats[(byte)vertexFormat];
+            var vatIndex = (int)gxCmd.VertexFormat;
+            var attr = gxVertexAttributeFormats[vatIndex].GetAttr(attribute);
+            return attr != null;
         }
-        public VertexAttributeFormat this[DisplayCommand displayCommand]
+    }
+
+    public bool HasAttr(DisplayCommand gxCmd, AttributeFlags attribute)
+    {
+        Assert.IsTrue(gxCmd.VertexFormatIndex < 8);
+
+        if (attribute == 0)
         {
-            get => gxVertexAttributeFormats[displayCommand.VertexFormatIndex];
+            return false;
         }
-
-
-        public VertexAttributeTable(params VertexAttributeFormat[] formats)
+        else
         {
-            if (formats.Length > 8)
-                throw new ArgumentOutOfRangeException();
-
-            // Update formats
-            for (int i = 0; i < formats.Length; i++)
-                gxVertexAttributeFormats[i] = formats[i];
-
-            // Clear old refs
-            for (int i = formats.Length; i < gxVertexAttributeFormats.Length; i++)
-                gxVertexAttributeFormats[i] = null;
+            var vatIndex = (int)gxCmd.VertexFormat;
+            var vertexAttribute = gxVertexAttributeFormats[vatIndex].GetAttr(attribute);
+            return vertexAttribute != null;
         }
-
-        public bool VatHasAttr(DisplayCommand gxCmd, Attribute attribute)
-        {
-            Assert.IsTrue((byte)gxCmd.VertexFormat < 8);
-
-            if (attribute == 0)
-            {
-                return false;
-            }
-            else
-            {
-                var vatIndex = (int)gxCmd.VertexFormat;
-                var attr = gxVertexAttributeFormats[vatIndex].GetAttr(attribute);
-                return attr != null;
-            }
-        }
-
-        public bool HasAttr(DisplayCommand gxCmd, AttributeFlags attribute)
-        {
-            Assert.IsTrue(gxCmd.VertexFormatIndex < 8);
-
-            if (attribute == 0)
-            {
-                return false;
-            }
-            else
-            {
-                var vatIndex = (int)gxCmd.VertexFormat;
-                var vertexAttribute = gxVertexAttributeFormats[vatIndex].GetAttr(attribute);
-                return vertexAttribute != null;
-            }
-        }
-
     }
 
 }
