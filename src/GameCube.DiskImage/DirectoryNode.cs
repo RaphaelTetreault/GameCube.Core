@@ -77,7 +77,7 @@ public class DirectoryNode : FileSystemNode
     internal void SerializeNamesRecursively(EndianBinaryWriter writer)
     {
         // Serialize self (ie: root)
-        writer.Write<AsciiCString>(Name);
+        writer.Write(Name);
 
         // Serialize children recursively
         foreach (var child in Children)
@@ -88,7 +88,7 @@ public class DirectoryNode : FileSystemNode
             }
             else if (child is FileNode fileNode)
             {
-                writer.Write<AsciiCString>(child.Name);
+                writer.Write(child.Name);
             }
             else
             {
