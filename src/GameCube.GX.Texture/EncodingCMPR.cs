@@ -1,9 +1,8 @@
-﻿using Manifold.IO;
-using System;
-using BCnEncoder.Encoder;
+﻿using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
-using Microsoft.Toolkit.HighPerformance;
-
+using CommunityToolkit.HighPerformance;
+using Manifold.IO;
+using System;
 
 namespace GameCube.GX.Texture;
 
