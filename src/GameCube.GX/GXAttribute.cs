@@ -7,7 +7,7 @@ namespace GameCube.GX;
 ///     Tells GX what to expect from oncoming vertex information.
 ///     That data provided should be 32-byte aligned. Refer to GX FIFO.
 /// </summary>
-public enum Attribute
+public enum GXAttribute
 {
     /// <summary>
     ///     Position/normal matrix index.

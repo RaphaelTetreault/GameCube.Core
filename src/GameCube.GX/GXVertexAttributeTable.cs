@@ -6,27 +6,27 @@ namespace GameCube.GX;
 /// <summary>
 ///     Vertex Attribute Table (GameCube VAT).
 /// </summary>
-public class VertexAttributeTable
+public class GXVertexAttributeTable
 {
     // FIELDS
-    private VertexAttributeFormat[] gxVertexAttributeFormats = new VertexAttributeFormat[8];
+    private GXVertexAttributeFormat[] gxVertexAttributeFormats = new GXVertexAttributeFormat[8];
 
     // INDEXERS
-    public VertexAttributeFormat this[int i]
+    public GXVertexAttributeFormat this[int i]
     {
         get => gxVertexAttributeFormats[i];
     }
-    public VertexAttributeFormat this[VertexFormat vertexFormat]
+    public GXVertexAttributeFormat this[GXVertexFormat vertexFormat]
     {
         get => gxVertexAttributeFormats[(byte)vertexFormat];
     }
-    public VertexAttributeFormat this[DisplayCommand displayCommand]
+    public GXVertexAttributeFormat this[GXDisplayCommand displayCommand]
     {
         get => gxVertexAttributeFormats[displayCommand.VertexFormatIndex];
     }
 
 
-    public VertexAttributeTable(params VertexAttributeFormat[] formats)
+    public GXVertexAttributeTable(params GXVertexAttributeFormat[] formats)
     {
         if (formats.Length > 8)
             throw new ArgumentOutOfRangeException();
@@ -40,7 +40,7 @@ public class VertexAttributeTable
             gxVertexAttributeFormats[i] = null;
     }
 
-    public bool VatHasAttr(DisplayCommand gxCmd, Attribute attribute)
+    public bool VatHasAttr(GXDisplayCommand gxCmd, GXAttribute attribute)
     {
         Assert.IsTrue((byte)gxCmd.VertexFormat < 8);
 
@@ -56,7 +56,7 @@ public class VertexAttributeTable
         }
     }
 
-    public bool HasAttr(DisplayCommand gxCmd, AttributeFlags attribute)
+    public bool HasAttr(GXDisplayCommand gxCmd, GXAttributeFlags attribute)
     {
         Assert.IsTrue(gxCmd.VertexFormatIndex < 8);
 

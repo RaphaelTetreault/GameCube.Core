@@ -3,7 +3,7 @@ namespace GameCube.GX;
 /// <summary>
 ///     Primitive type.
 /// </summary>
-public enum Primitive : byte
+public enum GXPrimitive : byte
 {
     GX_QUADS            = 0x80, // 0b10000000
     GX_TRIANGLES        = 0x90, // 0b10010000

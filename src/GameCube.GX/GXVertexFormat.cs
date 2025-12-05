@@ -3,7 +3,7 @@ namespace GameCube.GX;
 /// <summary>
 ///     Vertex format number.
 /// </summary>
-public enum VertexFormat : byte
+public enum GXVertexFormat : byte
 {
     GX_VTXFMT0 = 0,
     GX_VTXFMT1,

@@ -9,16 +9,16 @@ namespace GameCube.GX;
 /// <summary>
 ///     
 /// </summary>
-public class DisplayList :
+public class GXDisplayList :
     IBinaryAddressable,
     IBinarySerializable
 {
     //
-    private VertexAttributeTable vat;
-    private AttributeFlags attributes;
+    private GXVertexAttributeTable vat;
+    private GXAttributeFlags attributes;
 
     //
-    private DisplayCommand gxCommand;
+    private GXDisplayCommand gxCommand;
     //private Primitive primitive;
     //private VertexFormat vertexFormat;
     
@@ -54,41 +54,41 @@ public class DisplayList :
 
 
     public AddressRange AddressRange { get; set; }
-    public VertexAttributeTable Vat { get => vat; set => vat = value; }
-    public AttributeFlags Attributes { get => attributes; set => attributes = value; }
-    public DisplayCommand GxCommand { get => gxCommand; set => gxCommand = value; }
+    public GXVertexAttributeTable Vat { get => vat; set => vat = value; }
+    public GXAttributeFlags Attributes { get => attributes; set => attributes = value; }
+    public GXDisplayCommand GxCommand { get => gxCommand; set => gxCommand = value; }
     //public Primitive Primitive { get => primitive; set => primitive = value; }
     //public VertexFormat VertexFormat { get => vertexFormat; set => vertexFormat = value; }
     public ushort VertexCount { get => count; set => count = value; }
 
-    public DisplayList(AttributeFlags attr, VertexAttributeTable vat)
+    public GXDisplayList(GXAttributeFlags attr, GXVertexAttributeTable vat)
     {
         this.attributes = attr;
         this.vat = vat;
     }
 
 
-    private void ReadPOS(EndianBinaryReader reader, VertexAttributeFormat fmt, int i)
+    private void ReadPOS(EndianBinaryReader reader, GXVertexAttributeFormat fmt, int i)
     {
         pos[i] = GXUtility.ReadPos(reader, fmt.pos.NElements, fmt.pos.ComponentType, fmt.pos.NFracBits);
     }
-    private void ReadNRM(EndianBinaryReader reader, VertexAttributeFormat fmt, int i)
+    private void ReadNRM(EndianBinaryReader reader, GXVertexAttributeFormat fmt, int i)
     {
         nrm[i] = GXUtility.ReadNormal(reader, fmt.nrm.NElements, fmt.nrm.ComponentType, fmt.nrm.NFracBits);
     }
-    private void ReadNBT(EndianBinaryReader reader, VertexAttributeFormat fmt, int i)
+    private void ReadNBT(EndianBinaryReader reader, GXVertexAttributeFormat fmt, int i)
     {
         nrm[i] = GXUtility.ReadNormal(reader, fmt.nbt.NElements, fmt.nbt.ComponentType, fmt.nbt.NFracBits);
         bnm[i] = GXUtility.ReadNormal(reader, fmt.nbt.NElements, fmt.nbt.ComponentType, fmt.nbt.NFracBits);
         tan[i] = GXUtility.ReadNormal(reader, fmt.nbt.NElements, fmt.nbt.ComponentType, fmt.nbt.NFracBits);
     }
-    private void ReadCLR(EndianBinaryReader reader, VertexAttribute va, int i, GXColor[] clr)
+    private void ReadCLR(EndianBinaryReader reader, GXVertexAttribute va, int i, GXColor[] clr)
     {
         var color = new GXColor(va.ComponentType);
         color.Deserialize(reader);
         clr[i] = color;
     }
-    private void ReadTEX(EndianBinaryReader reader, VertexAttribute va, int i, Vector2[] tex)
+    private void ReadTEX(EndianBinaryReader reader, GXVertexAttribute va, int i, Vector2[] tex)
     {
         tex[i] = GXUtility.ReadUV(reader, va.NElements, va.ComponentType, va.NFracBits);
     }
@@ -98,29 +98,29 @@ public class DisplayList :
     }
 
 
-    private void WritePOS(EndianBinaryWriter writer, VertexAttributeFormat fmt, int i)
+    private void WritePOS(EndianBinaryWriter writer, GXVertexAttributeFormat fmt, int i)
     {
         var va = fmt.pos;
         GXUtility.WritePosition(writer, pos[i], va.NElements, va.ComponentType, va.NFracBits);
     }
-    private void WriteNRM(EndianBinaryWriter writer, VertexAttributeFormat fmt, int i)
+    private void WriteNRM(EndianBinaryWriter writer, GXVertexAttributeFormat fmt, int i)
     {
         var va = fmt.nrm;
         GXUtility.WriteNormal(writer, nrm[i], va.NElements, va.ComponentType, va.NFracBits);
     }
-    private void WriteNBT(EndianBinaryWriter writer, VertexAttributeFormat fmt, int i)
+    private void WriteNBT(EndianBinaryWriter writer, GXVertexAttributeFormat fmt, int i)
     {
         var va = fmt.nbt;
         GXUtility.WriteNormal(writer, nrm[i], va.NElements, va.ComponentType, va.NFracBits);
         GXUtility.WriteNormal(writer, bnm[i], va.NElements, va.ComponentType, va.NFracBits);
         GXUtility.WriteNormal(writer, tan[i], va.NElements, va.ComponentType, va.NFracBits);
     }
-    private void WriteCLR(EndianBinaryWriter writer, VertexAttribute va, int i, GXColor[] clr)
+    private void WriteCLR(EndianBinaryWriter writer, GXVertexAttribute va, int i, GXColor[] clr)
     {
         clr[i].ComponentType = va.ComponentType;
         clr[i].Serialize(writer);
     }
-    private void WriteTEX(EndianBinaryWriter writer, VertexAttribute va, int i, Vector2[] tex)
+    private void WriteTEX(EndianBinaryWriter writer, GXVertexAttribute va, int i, Vector2[] tex)
     {
         GXUtility.WriteUV(writer, tex[i], va.NElements, va.ComponentType, va.NFracBits);
     }
@@ -143,32 +143,32 @@ public class DisplayList :
             var fmt = vat[gxCommand];
 
             // Check each component type, see if it is used
-            bool hasPNMTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_PNMTXIDX);
-            bool hasTEX0MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX0MTXIDX);
-            bool hasTEX1MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX1MTXIDX);
-            bool hasTEX2MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX2MTXIDX);
-            bool hasTEX3MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX3MTXIDX);
-            bool hasTEX4MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX4MTXIDX);
-            bool hasTEX5MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX5MTXIDX);
-            bool hasTEX6MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX6MTXIDX);
-            bool hasTEX7MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX7MTXIDX);
-            bool hasPOS_MTX_ARRAY = attributes.HasFlag(AttributeFlags.GX_VA_POS_MTX_ARRAY);
-            bool hasNRM_MTX_ARRAY = attributes.HasFlag(AttributeFlags.GX_VA_NRM_MTX_ARRAY);
-            bool hasTEX_MTX_ARRAY = attributes.HasFlag(AttributeFlags.GX_VA_TEX_MTX_ARRAY);
-            bool hasLIGHT_ARRAY = attributes.HasFlag(AttributeFlags.GX_VA_LIGHT_ARRAY);
-            bool hasPOS = attributes.HasFlag(AttributeFlags.GX_VA_POS);
-            bool hasNRM = attributes.HasFlag(AttributeFlags.GX_VA_NRM);
-            bool hasNBT = attributes.HasFlag(AttributeFlags.GX_VA_NBT);
-            bool hasCLR0 = attributes.HasFlag(AttributeFlags.GX_VA_CLR0);
-            bool hasCLR1 = attributes.HasFlag(AttributeFlags.GX_VA_CLR1);
-            bool hasTEX0 = attributes.HasFlag(AttributeFlags.GX_VA_TEX0);
-            bool hasTEX1 = attributes.HasFlag(AttributeFlags.GX_VA_TEX1);
-            bool hasTEX2 = attributes.HasFlag(AttributeFlags.GX_VA_TEX2);
-            bool hasTEX3 = attributes.HasFlag(AttributeFlags.GX_VA_TEX3);
-            bool hasTEX4 = attributes.HasFlag(AttributeFlags.GX_VA_TEX4);
-            bool hasTEX5 = attributes.HasFlag(AttributeFlags.GX_VA_TEX5);
-            bool hasTEX6 = attributes.HasFlag(AttributeFlags.GX_VA_TEX6);
-            bool hasTEX7 = attributes.HasFlag(AttributeFlags.GX_VA_TEX7);
+            bool hasPNMTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_PNMTXIDX);
+            bool hasTEX0MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX0MTXIDX);
+            bool hasTEX1MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX1MTXIDX);
+            bool hasTEX2MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX2MTXIDX);
+            bool hasTEX3MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX3MTXIDX);
+            bool hasTEX4MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX4MTXIDX);
+            bool hasTEX5MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX5MTXIDX);
+            bool hasTEX6MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX6MTXIDX);
+            bool hasTEX7MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX7MTXIDX);
+            bool hasPOS_MTX_ARRAY = attributes.HasFlag(GXAttributeFlags.GX_VA_POS_MTX_ARRAY);
+            bool hasNRM_MTX_ARRAY = attributes.HasFlag(GXAttributeFlags.GX_VA_NRM_MTX_ARRAY);
+            bool hasTEX_MTX_ARRAY = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX_MTX_ARRAY);
+            bool hasLIGHT_ARRAY = attributes.HasFlag(GXAttributeFlags.GX_VA_LIGHT_ARRAY);
+            bool hasPOS = attributes.HasFlag(GXAttributeFlags.GX_VA_POS);
+            bool hasNRM = attributes.HasFlag(GXAttributeFlags.GX_VA_NRM);
+            bool hasNBT = attributes.HasFlag(GXAttributeFlags.GX_VA_NBT);
+            bool hasCLR0 = attributes.HasFlag(GXAttributeFlags.GX_VA_CLR0);
+            bool hasCLR1 = attributes.HasFlag(GXAttributeFlags.GX_VA_CLR1);
+            bool hasTEX0 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX0);
+            bool hasTEX1 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX1);
+            bool hasTEX2 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX2);
+            bool hasTEX3 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX3);
+            bool hasTEX4 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX4);
+            bool hasTEX5 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX5);
+            bool hasTEX6 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX6);
+            bool hasTEX7 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX7);
 
             // INITIALIZE ARRAYS
             // Currently unsupported. TEX#MTXIDX should work but is untested.
@@ -240,32 +240,32 @@ public class DisplayList :
         attributes = ComponentsToGXAttributes();
 
         // Check each component type, see if it is used
-        bool hasPNMTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_PNMTXIDX);
-        bool hasTEX0MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX0MTXIDX);
-        bool hasTEX1MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX1MTXIDX);
-        bool hasTEX2MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX2MTXIDX);
-        bool hasTEX3MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX3MTXIDX);
-        bool hasTEX4MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX4MTXIDX);
-        bool hasTEX5MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX5MTXIDX);
-        bool hasTEX6MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX6MTXIDX);
-        bool hasTEX7MTXIDX = attributes.HasFlag(AttributeFlags.GX_VA_TEX7MTXIDX);
-        bool hasPOS_MTX_ARRAY = attributes.HasFlag(AttributeFlags.GX_VA_POS_MTX_ARRAY);
-        bool hasNRM_MTX_ARRAY = attributes.HasFlag(AttributeFlags.GX_VA_NRM_MTX_ARRAY);
-        bool hasTEX_MTX_ARRAY = attributes.HasFlag(AttributeFlags.GX_VA_TEX_MTX_ARRAY);
-        bool hasLIGHT_ARRAY = attributes.HasFlag(AttributeFlags.GX_VA_LIGHT_ARRAY);
-        bool hasPOS = attributes.HasFlag(AttributeFlags.GX_VA_POS);
-        bool hasNRM = attributes.HasFlag(AttributeFlags.GX_VA_NRM);
-        bool hasNBT = attributes.HasFlag(AttributeFlags.GX_VA_NBT);
-        bool hasCLR0 = attributes.HasFlag(AttributeFlags.GX_VA_CLR0);
-        bool hasCLR1 = attributes.HasFlag(AttributeFlags.GX_VA_CLR1);
-        bool hasTEX0 = attributes.HasFlag(AttributeFlags.GX_VA_TEX0);
-        bool hasTEX1 = attributes.HasFlag(AttributeFlags.GX_VA_TEX1);
-        bool hasTEX2 = attributes.HasFlag(AttributeFlags.GX_VA_TEX2);
-        bool hasTEX3 = attributes.HasFlag(AttributeFlags.GX_VA_TEX3);
-        bool hasTEX4 = attributes.HasFlag(AttributeFlags.GX_VA_TEX4);
-        bool hasTEX5 = attributes.HasFlag(AttributeFlags.GX_VA_TEX5);
-        bool hasTEX6 = attributes.HasFlag(AttributeFlags.GX_VA_TEX6);
-        bool hasTEX7 = attributes.HasFlag(AttributeFlags.GX_VA_TEX7);
+        bool hasPNMTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_PNMTXIDX);
+        bool hasTEX0MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX0MTXIDX);
+        bool hasTEX1MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX1MTXIDX);
+        bool hasTEX2MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX2MTXIDX);
+        bool hasTEX3MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX3MTXIDX);
+        bool hasTEX4MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX4MTXIDX);
+        bool hasTEX5MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX5MTXIDX);
+        bool hasTEX6MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX6MTXIDX);
+        bool hasTEX7MTXIDX = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX7MTXIDX);
+        bool hasPOS_MTX_ARRAY = attributes.HasFlag(GXAttributeFlags.GX_VA_POS_MTX_ARRAY);
+        bool hasNRM_MTX_ARRAY = attributes.HasFlag(GXAttributeFlags.GX_VA_NRM_MTX_ARRAY);
+        bool hasTEX_MTX_ARRAY = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX_MTX_ARRAY);
+        bool hasLIGHT_ARRAY = attributes.HasFlag(GXAttributeFlags.GX_VA_LIGHT_ARRAY);
+        bool hasPOS = attributes.HasFlag(GXAttributeFlags.GX_VA_POS);
+        bool hasNRM = attributes.HasFlag(GXAttributeFlags.GX_VA_NRM);
+        bool hasNBT = attributes.HasFlag(GXAttributeFlags.GX_VA_NBT);
+        bool hasCLR0 = attributes.HasFlag(GXAttributeFlags.GX_VA_CLR0);
+        bool hasCLR1 = attributes.HasFlag(GXAttributeFlags.GX_VA_CLR1);
+        bool hasTEX0 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX0);
+        bool hasTEX1 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX1);
+        bool hasTEX2 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX2);
+        bool hasTEX3 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX3);
+        bool hasTEX4 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX4);
+        bool hasTEX5 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX5);
+        bool hasTEX6 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX6);
+        bool hasTEX7 = attributes.HasFlag(GXAttributeFlags.GX_VA_TEX7);
 
         var fmt = vat[gxCommand];
 
@@ -310,35 +310,35 @@ public class DisplayList :
     }
 
 
-    public AttributeFlags ComponentsToGXAttributes()
+    public GXAttributeFlags ComponentsToGXAttributes()
     {
-        AttributeFlags attributes = 0;
-        if (!pn_mtx_idx.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_PNMTXIDX;
-        if (!tex0_mtx_idx.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX0MTXIDX;
-        if (!tex1_mtx_idx.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX1MTXIDX;
-        if (!tex2_mtx_idx.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX2MTXIDX;
-        if (!tex3_mtx_idx.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX3MTXIDX;
-        if (!tex4_mtx_idx.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX4MTXIDX;
-        if (!tex5_mtx_idx.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX5MTXIDX;
-        if (!tex6_mtx_idx.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX6MTXIDX;
-        if (!tex7_mtx_idx.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX7MTXIDX;
+        GXAttributeFlags attributes = 0;
+        if (!pn_mtx_idx.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_PNMTXIDX;
+        if (!tex0_mtx_idx.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX0MTXIDX;
+        if (!tex1_mtx_idx.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX1MTXIDX;
+        if (!tex2_mtx_idx.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX2MTXIDX;
+        if (!tex3_mtx_idx.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX3MTXIDX;
+        if (!tex4_mtx_idx.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX4MTXIDX;
+        if (!tex5_mtx_idx.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX5MTXIDX;
+        if (!tex6_mtx_idx.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX6MTXIDX;
+        if (!tex7_mtx_idx.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX7MTXIDX;
         //if ( .IsNullOrEmpty()) attributes |= GXAttributes.GX_VA_POS_MTX_ARRAY;
         //if ( .IsNullOrEmpty()) attributes |= GXAttributes.GX_VA_NRM_MTX_ARRAY;
         //if ( .IsNullOrEmpty()) attributes |= GXAttributes.GX_VA_TEX_MTX_ARRAY;
         //if ( .IsNullOrEmpty()) attributes |= GXAttributes.GX_VA_LIGHT_ARRAY;
-        if (!pos.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_POS;
-        /**/ if (!bnm.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_NBT; // NBT if bnm or tan are non-zero length
-        else if (!nrm.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_NRM; // Otherwise, check if nrm is non-zero length
-        if (!clr0.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_CLR0;
-        if (!clr1.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_CLR1;
-        if (!tex0.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX0;
-        if (!tex1.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX1;
-        if (!tex2.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX2;
-        if (!tex3.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX3;
-        if (!tex4.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX4;
-        if (!tex5.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX5;
-        if (!tex6.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX6;
-        if (!tex7.IsNullOrEmpty()) attributes |= AttributeFlags.GX_VA_TEX7;
+        if (!pos.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_POS;
+        /**/ if (!bnm.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_NBT; // NBT if bnm or tan are non-zero length
+        else if (!nrm.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_NRM; // Otherwise, check if nrm is non-zero length
+        if (!clr0.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_CLR0;
+        if (!clr1.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_CLR1;
+        if (!tex0.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX0;
+        if (!tex1.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX1;
+        if (!tex2.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX2;
+        if (!tex3.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX3;
+        if (!tex4.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX4;
+        if (!tex5.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX5;
+        if (!tex6.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX6;
+        if (!tex7.IsNullOrEmpty()) attributes |= GXAttributeFlags.GX_VA_TEX7;
 
         return attributes;
     }

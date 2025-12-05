@@ -3,7 +3,7 @@ namespace GameCube.GX;
 /// <summary>
 ///     GX Component Type.
 /// </summary>
-public enum ComponentType
+public enum GXComponentType
 {
     /// <summary>
     ///     Unsigned 8-bit integer.

@@ -13,14 +13,14 @@ public struct GXColor :
     public byte G;
     public byte B;
     public byte A;
-    public ComponentType ComponentType;
+    public GXComponentType ComponentType;
 
-    public GXColor(ComponentType componentType)
+    public GXColor(GXComponentType componentType)
     {
         R = G = B = A = 0;
         ComponentType = componentType;
     }
-    public GXColor(byte r, byte g, byte b, byte a, ComponentType componentType)
+    public GXColor(byte r, byte g, byte b, byte a, GXComponentType componentType)
     {
         R = r;
         G = g;
@@ -28,11 +28,11 @@ public struct GXColor :
         A = a;
         ComponentType = componentType;
     }
-    public GXColor(uint raw, ComponentType componentType) : this(raw)
+    public GXColor(uint raw, GXComponentType componentType) : this(raw)
     {
         ComponentType = componentType;
     }
-    public GXColor(int raw, ComponentType componentType) : this(raw)
+    public GXColor(int raw, GXComponentType componentType) : this(raw)
     {
         ComponentType = componentType;
     }
@@ -42,7 +42,7 @@ public struct GXColor :
         G = (byte)((raw >> 16) & 0b11111111);
         B = (byte)((raw >> 08) & 0b11111111);
         A = (byte)((raw >> 00) & 0b11111111);
-        ComponentType = ComponentType.GX_RGBA8;
+        ComponentType = GXComponentType.GX_RGBA8;
     }
     public GXColor(uint raw)
     {
@@ -50,7 +50,7 @@ public struct GXColor :
         G = (byte)((raw >> 16) & 0b11111111);
         B = (byte)((raw >> 08) & 0b11111111);
         A = (byte)((raw >> 00) & 0b11111111);
-        ComponentType = ComponentType.GX_RGBA8;
+        ComponentType = GXComponentType.GX_RGBA8;
     }
 
     public GXColor(byte r, byte g, byte b, byte a = 255)
@@ -59,19 +59,19 @@ public struct GXColor :
         G = g;
         B = b;
         A = a;
-        ComponentType = ComponentType.GX_RGBA8;
+        ComponentType = GXComponentType.GX_RGBA8;
     }
 
     public void Deserialize(EndianBinaryReader reader)
     {
         switch (ComponentType)
         {
-            case ComponentType.GX_RGB565: ReadRGBA565(reader); break;
-            case ComponentType.GX_RGB8: ReadRGB8(reader); break;
-            case ComponentType.GX_RGBA4: ReadRGBA4(reader); break;
-            case ComponentType.GX_RGBA6: ReadRGBA6(reader); break;
-            case ComponentType.GX_RGBA8: ReadRGBA8(reader); break;
-            case ComponentType.GX_RGBX8: ReadRGBX8(reader); break;
+            case GXComponentType.GX_RGB565: ReadRGBA565(reader); break;
+            case GXComponentType.GX_RGB8: ReadRGB8(reader); break;
+            case GXComponentType.GX_RGBA4: ReadRGBA4(reader); break;
+            case GXComponentType.GX_RGBA6: ReadRGBA6(reader); break;
+            case GXComponentType.GX_RGBA8: ReadRGBA8(reader); break;
+            case GXComponentType.GX_RGBX8: ReadRGBX8(reader); break;
 
             default:
                 throw new ArgumentException("Invalid GXColor type");
@@ -82,12 +82,12 @@ public struct GXColor :
     {
         switch (ComponentType)
         {
-            case ComponentType.GX_RGB565: WriteRGBA565(writer); break;
-            case ComponentType.GX_RGB8: WriteRGB8(writer); break;
-            case ComponentType.GX_RGBA4: WriteRGBA4(writer); break;
-            case ComponentType.GX_RGBA6: WriteRGBA6(writer); break;
-            case ComponentType.GX_RGBA8: WriteRGBA8(writer); break;
-            case ComponentType.GX_RGBX8: WriteRGBX8(writer); break;
+            case GXComponentType.GX_RGB565: WriteRGBA565(writer); break;
+            case GXComponentType.GX_RGB8: WriteRGB8(writer); break;
+            case GXComponentType.GX_RGBA4: WriteRGBA4(writer); break;
+            case GXComponentType.GX_RGBA6: WriteRGBA6(writer); break;
+            case GXComponentType.GX_RGBA8: WriteRGBA8(writer); break;
+            case GXComponentType.GX_RGBX8: WriteRGBX8(writer); break;
 
             default:
                 throw new ArgumentException("Invalid GXColor type");

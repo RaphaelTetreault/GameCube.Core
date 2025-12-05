@@ -3,7 +3,7 @@ namespace GameCube.GX;
 /// <summary>
 ///     GX Component Count.
 /// </summary>
-public enum ComponentCount
+public enum GXComponentCount
 {
     /// <summary>
     ///     X,Y position.

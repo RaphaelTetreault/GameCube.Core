@@ -5,7 +5,7 @@ namespace GameCube.GX;
 /// <summary>
 ///     
 /// </summary>
-public class DisplayCommand :
+public class GXDisplayCommand :
     IBinarySerializable
 {
     // CONST
@@ -15,12 +15,12 @@ public class DisplayCommand :
 
     // FIELDS
     private byte command;
-    private Primitive primitive;
-    private VertexFormat vertexFormat;
+    private GXPrimitive primitive;
+    private GXVertexFormat vertexFormat;
 
 
     // PROPERTIES
-    public Primitive Primitive
+    public GXPrimitive Primitive
     {
         get => primitive;
         set
@@ -30,7 +30,7 @@ public class DisplayCommand :
             command |= (byte)primitive;
         }
     }
-    public VertexFormat VertexFormat
+    public GXVertexFormat VertexFormat
     {
         get => vertexFormat;
         set
@@ -47,8 +47,8 @@ public class DisplayCommand :
     public void Deserialize(EndianBinaryReader reader)
     {
         reader.Read(ref command);
-        primitive = (Primitive)(command & kVertexFormatMask); 
-        vertexFormat = (VertexFormat)(command & kPrimitiveMask); 
+        primitive = (GXPrimitive)(command & kVertexFormatMask); 
+        vertexFormat = (GXVertexFormat)(command & kPrimitiveMask); 
     }
 
     public void Serialize(EndianBinaryWriter writer)
