@@ -35,7 +35,7 @@ public static class DXT1
 
         ushort minRgb565 = TextureColor.ToRGB565(min);
         ushort maxRgb565 = TextureColor.ToRGB565(max);
-        bool hasAlpha = ContainsTranslucidPixels(pixelsBlock4x4, 128);
+        bool hasAlpha = ContainsTranslucidPixels(pixelsBlock4x4, 127);
         // c0 < c1 IF has alpha
         c0 = hasAlpha ? minRgb565 : maxRgb565;
         c1 = hasAlpha ? maxRgb565 : minRgb565;
