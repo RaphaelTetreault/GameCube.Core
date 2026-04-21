@@ -39,7 +39,7 @@ public static class DXT1
         // c0 < c1 IF has alpha
         c0 = hasAlpha ? minRgb565 : maxRgb565;
         c1 = hasAlpha ? maxRgb565 : minRgb565;
-        TextureColor[] colorPalette = EncodingCMPR.GetCmprPalette(c0, c1);
+        TextureColor[] colorPalette = TextureEncodingCMPR.GetCmprPalette(c0, c1);
 
         // Convert color palette into Vector4 space
         Vector4[] vector4Palette = new Vector4[colorPalette.Length];
@@ -55,7 +55,7 @@ public static class DXT1
             unpackedIndexes[i] = closestColorIndex;
         }
 
-        packedIndexes = EncodingCMPR.PackIndexes(unpackedIndexes);
+        packedIndexes = TextureEncodingCMPR.PackIndexes(unpackedIndexes);
 
         // We're done! We have:
         // c0 and c1, properly ordered for DXT1 alpha lerp

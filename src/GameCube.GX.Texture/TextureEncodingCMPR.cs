@@ -12,7 +12,7 @@ namespace GameCube.GX.Texture;
 /// 
 /// TODO: better compression
 /// https://github.com/Nominom/BCnEncoder.NET/blob/master/BCnEnc.Net/Encoder/Bc1BlockEncoder.cs
-public sealed class EncodingCMPR : DirectEncoding
+public sealed class TextureEncodingCMPR : DirectEncoding
 {
     public override byte BlockWidth => 8;
     public override byte BlockHeight => 8;
@@ -20,7 +20,7 @@ public sealed class EncodingCMPR : DirectEncoding
     public override TextureFormat Format => TextureFormat.CMPR;
     private BcEncoder BC1Encoder => new BcEncoder();
 
-    public EncodingCMPR(CompressionQuality quality = CompressionQuality.Balanced) : base()
+    public TextureEncodingCMPR(CompressionQuality quality = CompressionQuality.Balanced) : base()
     {
         BC1Encoder.OutputOptions.Quality = quality;
         BC1Encoder.OutputOptions.Format = CompressionFormat.Bc1;

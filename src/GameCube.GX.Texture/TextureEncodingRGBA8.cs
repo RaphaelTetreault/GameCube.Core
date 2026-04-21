@@ -5,7 +5,7 @@ namespace GameCube.GX.Texture;
 /// <summary>
 ///     Encoding format for '8-bit red, 8-bit green, 8-bit blue, and 8-bit alpha' colour texture.
 /// </summary>
-public sealed class EncodingRGBA8 : DirectEncoding
+public sealed class TextureEncodingRGBA8 : DirectEncoding
 {
     // Big lie: RGBA8 takes 2 4x4 blocks, one is AR then the other GB
     // However, since they are ordered like so, you can treat it like

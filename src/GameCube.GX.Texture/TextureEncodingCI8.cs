@@ -5,7 +5,7 @@ namespace GameCube.GX.Texture;
 /// <summary>
 ///     Encoding format for '8-bit colour-indexed' texture.
 /// </summary>
-public sealed class EncodingCI8 : IndirectEncoding
+public sealed class TextureEncodingCI8 : IndirectEncoding
 {
     public override byte BlockWidth => 8;
     public override byte BlockHeight => 4;

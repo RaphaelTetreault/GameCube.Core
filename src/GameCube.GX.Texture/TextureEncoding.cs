@@ -6,20 +6,20 @@ namespace GameCube.GX.Texture;
 /// <summary>
 ///     The base representation of a GameCube texture colour format encoding.
 /// </summary>
-public abstract class Encoding
+public abstract class TextureEncoding
 {
     // Encodings for textures
-    public static readonly EncodingI4 EncodingI4 = new();
-    public static readonly EncodingI8 EncodingI8 = new();
-    public static readonly EncodingIA4 EncodingIA4 = new();
-    public static readonly EncodingIA8 EncodingIA8 = new();
-    public static readonly EncodingRGB565 EncodingRGB565 = new();
-    public static readonly EncodingRGB5A3 EncodingRGB5A3 = new();
-    public static readonly EncodingRGBA8 EncodingRGBA8 = new();
-    public static readonly EncodingCI4 EncodingCI4 = new();
-    public static readonly EncodingCI8 EncodingCI8 = new();
-    public static readonly EncodingCI14X2 EncodingCI14X2 = new();
-    public static readonly EncodingCMPR EncodingCMPR = new();
+    public static readonly TextureEncodingI4 EncodingI4 = new();
+    public static readonly TextureEncodingI8 EncodingI8 = new();
+    public static readonly TextureEncodingIA4 EncodingIA4 = new();
+    public static readonly TextureEncodingIA8 EncodingIA8 = new();
+    public static readonly TextureEncodingRGB565 EncodingRGB565 = new();
+    public static readonly TextureEncodingRGB5A3 EncodingRGB5A3 = new();
+    public static readonly TextureEncodingRGBA8 EncodingRGBA8 = new();
+    public static readonly TextureEncodingCI4 EncodingCI4 = new();
+    public static readonly TextureEncodingCI8 EncodingCI8 = new();
+    public static readonly TextureEncodingCI14X2 EncodingCI14X2 = new();
+    public static readonly TextureEncodingCMPR EncodingCMPR = new();
 
     /// <summary>
     ///     The pixel width of a block for this encoding.
@@ -71,7 +71,7 @@ public abstract class Encoding
     /// <returns>
     ///     
     /// </returns>
-    public TBlock[] ReadBlocks<TBlock>(EndianBinaryReader reader, Encoding encoding, int blocksWidthCount, int blocksHeightCount)
+    public TBlock[] ReadBlocks<TBlock>(EndianBinaryReader reader, TextureEncoding encoding, int blocksWidthCount, int blocksHeightCount)
         where TBlock : Block
     {
         int blocksCount = blocksWidthCount * blocksHeightCount;
@@ -89,7 +89,7 @@ public abstract class Encoding
     /// <returns>
     ///     
     /// </returns>
-    public TBlock[] ReadBlocks<TBlock>(EndianBinaryReader reader, Encoding encoding, int blocksCount)
+    public TBlock[] ReadBlocks<TBlock>(EndianBinaryReader reader, TextureEncoding encoding, int blocksCount)
         where TBlock : Block
     {
         var blocks = new TBlock[blocksCount];
@@ -137,7 +137,7 @@ public abstract class Encoding
     /// <exception cref="System.Exception">
     ///     Thrown if the <paramref name="textureFormat"/> is not defined.
     /// </exception>
-    public static Encoding GetEncoding(TextureFormat textureFormat)
+    public static TextureEncoding GetEncoding(TextureFormat textureFormat)
     {
         switch (textureFormat)
         {
@@ -187,7 +187,7 @@ public abstract class Encoding
         int totalBlocks = nBlocksWidth * nBlocksHeight;
         return totalBlocks;
     }
-    public static int GetTotalBlocksToEncode(Texture texture, Encoding encoding)
+    public static int GetTotalBlocksToEncode(Texture texture, TextureEncoding encoding)
         => GetTotalBlocksToEncode(texture.Width, texture.Height, encoding.BlockWidth, encoding.BlockHeight);
     public int GetTotalBlocksToEncode(Texture texture)
         => GetTotalBlocksToEncode(texture.Width, texture.Height, BlockWidth, BlockHeight);
@@ -198,7 +198,7 @@ public abstract class Encoding
         int nBlocksWidth = (int)Math.Ceiling(widthPixels / (float)blockWidth);
         return nBlocksWidth;
     }
-    public static int GetHorizontalBlocksCountToEncode(Texture texture, Encoding encoding)
+    public static int GetHorizontalBlocksCountToEncode(Texture texture, TextureEncoding encoding)
         => GetHorizontalBlocksCountToEncode(texture.Width, encoding.BlockWidth);
     public int GetHorizontalBlocksCountToEncode(Texture texture)
         => GetHorizontalBlocksCountToEncode(texture.Width, BlockWidth);
@@ -208,7 +208,7 @@ public abstract class Encoding
         int nBlocksHeight = (int)Math.Ceiling(heightPixels / (float)blockHeight);
         return nBlocksHeight;
     }
-    public static int GetVerticalBlocksCountToEncode(Texture texture, Encoding encoding)
+    public static int GetVerticalBlocksCountToEncode(Texture texture, TextureEncoding encoding)
         => GetVerticalBlocksCountToEncode(texture.Height, encoding.BlockHeight);
     public int GetVerticalBlocksCountToEncode(Texture texture)
         => GetVerticalBlocksCountToEncode(texture.Height, BlockHeight);

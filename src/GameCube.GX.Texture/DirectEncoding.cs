@@ -5,7 +5,7 @@ namespace GameCube.GX.Texture;
 /// <summary>
 ///     The base representation of a GameCube direct-colour texture format encoding.
 /// </summary>
-public abstract class DirectEncoding : Encoding
+public abstract class DirectEncoding : TextureEncoding
 {
     /// <summary>
     ///     The number of bits used by this encoding to represent a single colour.

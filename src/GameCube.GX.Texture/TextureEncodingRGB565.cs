@@ -3,14 +3,14 @@
 namespace GameCube.GX.Texture;
 
 /// <summary>
-///     Encoding format for '8-bit intensity and 8-bit alpha' grayscale texture.
+///     Encoding format for '5-bit red, 6-bit green, and 5-bit blue' colour texture.
 /// </summary>
-public sealed class EncodingIA8 : DirectEncoding
+public sealed class TextureEncodingRGB565 : DirectEncoding
 {
     public override byte BlockWidth => 4;
     public override byte BlockHeight => 4;
     public override byte BitsPerColor => 16;
-    public override TextureFormat Format => TextureFormat.IA8;
+    public override TextureFormat Format => TextureFormat.RGB565;
 
 
     public override Block ReadBlock(EndianBinaryReader reader)
@@ -20,8 +20,8 @@ public sealed class EncodingIA8 : DirectEncoding
         {
             for (int x = 0; x < block.Width; x++)
             {
-                ushort ia8 = reader.ReadUInt16();
-                var color = TextureColor.FromIA8(ia8);
+                ushort rgb565 = reader.ReadUInt16();
+                var color = TextureColor.FromRGB565(rgb565);
                 int index = x + (y * block.Width);
                 block[index] = color;
             }
@@ -38,10 +38,9 @@ public sealed class EncodingIA8 : DirectEncoding
             {
                 int index = x + (y * block.Width);
                 var color = colorBlock[index];
-                ushort ia8 = TextureColor.ToIA8(color);
-                writer.Write(ia8);
+                ushort rgb565 = TextureColor.ToRGB565(color);
+                writer.Write(rgb565);
             }
         }
     }
-
 }

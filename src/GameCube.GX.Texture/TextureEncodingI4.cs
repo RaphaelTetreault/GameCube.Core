@@ -5,7 +5,7 @@ namespace GameCube.GX.Texture;
 /// <summary>
 ///     Encoding format for '4-bit intensity' grayscale texture.
 /// </summary>
-public sealed class EncodingI4 : DirectEncoding
+public sealed class TextureEncodingI4 : DirectEncoding
 {
     public override byte BlockWidth => 8;
     public override byte BlockHeight => 8;
