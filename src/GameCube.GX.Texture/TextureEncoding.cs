@@ -156,6 +156,48 @@ public abstract class TextureEncoding
         }
     }
 
+    public static bool IsDirectEncoding(TextureFormat textureFormat)
+    {
+        switch (textureFormat)
+        {
+            case TextureFormat.I4:
+            case TextureFormat.I8:
+            case TextureFormat.IA4:
+            case TextureFormat.IA8:
+            case TextureFormat.RGB565:
+            case TextureFormat.RGB5A3:
+            case TextureFormat.RGBA8:
+            case TextureFormat.CMPR:
+                return true;
+            case TextureFormat.CI4:
+            case TextureFormat.CI8:
+            case TextureFormat.CI14X2:
+                return false;
+            default: throw new System.Exception($"Unhandled texture format {textureFormat}.");
+        }
+    }
+
+    public static bool IsIndirectEncoding(TextureFormat textureFormat)
+    {
+        switch (textureFormat)
+        {
+            case TextureFormat.I4:
+            case TextureFormat.I8:
+            case TextureFormat.IA4:
+            case TextureFormat.IA8:
+            case TextureFormat.RGB565:
+            case TextureFormat.RGB5A3:
+            case TextureFormat.RGBA8:
+            case TextureFormat.CMPR:
+                return false;
+            case TextureFormat.CI4:
+            case TextureFormat.CI8:
+            case TextureFormat.CI14X2:
+                return true;
+            default: throw new System.Exception($"Unhandled texture format {textureFormat}.");
+        }
+    }
+
     /// <summary>
     ///     Returns the number of blocks required to encode a <paramref name="widthPixels"/> by
     ///     <paramref name="heightPixels"/> sized texture using this encoding.
