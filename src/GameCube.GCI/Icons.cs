@@ -1,7 +1,8 @@
-﻿using Manifold.IO;
+﻿using GameCube.GX.Texture;
+using Manifold.IO;
 using System;
 
-namespace GameCube.GX.Texture;
+namespace GameCube.GCI;
 
 /// <summary>
 ///     GameCube GCI Icon(s).
