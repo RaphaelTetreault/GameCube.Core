@@ -3,7 +3,7 @@
 /// <summary>
 ///     Indicates animation speed for GameCube GCI icon.
 /// </summary>
-public enum AnimationSpeed : ushort
+public enum GciAnimationSpeed : ushort
 {
     NoIcon = 0,
     // Animation for Icon 0

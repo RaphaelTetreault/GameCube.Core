@@ -136,7 +136,7 @@ public abstract class Gci<TBinarySerializable> :
 
     private TextureFormat GetTextureFormat()
     {
-        bool isInvalid = (Header.BannerAndIconFlags & BannerAndIconFlags.InvalidBanner) == BannerAndIconFlags.InvalidBanner;
+        bool isInvalid = (Header.BannerAndIconFlags & GciBannerIconFlags.Metadata_InvalidBanner) == GciBannerIconFlags.Metadata_InvalidBanner;
         if (isInvalid)
         {
             string msg = $"Invalid banner and icon format detected.";
@@ -144,7 +144,7 @@ public abstract class Gci<TBinarySerializable> :
         }
 
         //bool isIndirectCI8 = (header.BannerAndIconFlags & BannerAndIconFlags.IndirectColorCI8) == BannerAndIconFlags.IndirectColorCI8;
-        bool isDirectRGB5A3 = (Header.BannerAndIconFlags & BannerAndIconFlags.DirectColorRGB5A3) == BannerAndIconFlags.DirectColorRGB5A3;
+        bool isDirectRGB5A3 = (Header.BannerAndIconFlags & GciBannerIconFlags.DirectColorRGB5A3) == GciBannerIconFlags.DirectColorRGB5A3;
         TextureFormat textureFormat = isDirectRGB5A3 ? DirectFormat : IndirectFormat;
         return textureFormat;
     }

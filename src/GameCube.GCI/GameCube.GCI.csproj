@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\GameCube.GFZ\src\GameCube.GFZ\GameCube.GFZ.csproj" />
     <ProjectReference Include="..\..\..\Manifold.Core\src\Manifold.IO\Manifold.IO.csproj" />
+    <ProjectReference Include="..\GameCube.Common\GameCube.Common.csproj" />
     <ProjectReference Include="..\GameCube.DiskImage\GameCube.DiskImage.csproj" />
     <ProjectReference Include="..\GameCube.GX.Texture\GameCube.GX.Texture.csproj" />
   </ItemGroup>

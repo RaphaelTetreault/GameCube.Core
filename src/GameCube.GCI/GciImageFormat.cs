@@ -3,7 +3,7 @@
 /// <summary>
 ///     Indicates the image format for the GCI.
 /// </summary>
-public enum ImageFormat : ushort
+public enum GciImageFormat : ushort
 {
     NoIcon,
     IndirectColor_SharedPalette,

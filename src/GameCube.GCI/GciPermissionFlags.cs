@@ -4,7 +4,7 @@
 ///     Indicates user permissions for managing the GCI save data.
 /// </summary>
 [System.Flags]
-public enum PermissionFlags : byte
+public enum GciPermissionFlags : byte
 {
     IsPublic = 1 << 2,
     NoCopy = 1 << 3,

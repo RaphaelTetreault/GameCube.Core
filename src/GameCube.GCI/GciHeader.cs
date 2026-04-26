@@ -26,13 +26,13 @@ public class GciHeader :
     // Fields
     private GameID gameID = new();
     private byte const_0xFF;
-    private BannerAndIconFlags bannerAndIconFlags;
+    private GciBannerIconFlags bannerAndIconFlags;
     private string fileName = string.Empty;
     private uint modificationTime;
     private Offset imageDataOffset;
-    private ImageFormat imageFormat;
-    private AnimationSpeed animationSpeed;
-    private PermissionFlags permissionFlags;
+    private GciImageFormat imageFormat;
+    private GciAnimationSpeed animationSpeed;
+    private GciPermissionFlags permissionFlags;
     private byte copyCount;
     private ushort firstBlockIndex; // on memory card AFAICT
     private ushort blockCount;
@@ -41,16 +41,16 @@ public class GciHeader :
 
     // Accessors
     public GameID GameID { get => gameID; set => gameID = value; }
-    public BannerAndIconFlags BannerAndIconFlags { get => bannerAndIconFlags; set => bannerAndIconFlags = value; }
+    public GciBannerIconFlags BannerAndIconFlags { get => bannerAndIconFlags; set => bannerAndIconFlags = value; }
     public string FileName { get => fileName; set => fileName = value; }
     /// <summary>
     ///     Time of file's last modification in seconds since 12am, January 1st, 2000
     /// </summary>
     public uint ModificationTime { get => modificationTime; set => modificationTime = value; }
     public Offset ImageDataOffset { get => imageDataOffset; set => imageDataOffset = value; }
-    public ImageFormat ImageFormat { get => imageFormat; set => imageFormat = value; }
-    public AnimationSpeed AnimationSpeed { get => animationSpeed; set => animationSpeed = value; }
-    public PermissionFlags PermissionFlags { get => permissionFlags; set => permissionFlags = value; }
+    public GciImageFormat ImageFormat { get => imageFormat; set => imageFormat = value; }
+    public GciAnimationSpeed AnimationSpeed { get => animationSpeed; set => animationSpeed = value; }
+    public GciPermissionFlags PermissionFlags { get => permissionFlags; set => permissionFlags = value; }
     public byte CopyCount { get => copyCount; set => copyCount = value; }
     public ushort FirstBlockIndex { get => firstBlockIndex; set => firstBlockIndex = value; }
     public ushort BlockCount { get => blockCount; set => blockCount = value; }
