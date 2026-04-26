@@ -5,7 +5,7 @@ namespace GameCube.GCI;
 /// <summary>
 ///     Indicates color format and animation type for GameCube GCI icon.
 /// </summary>
-[System.Flags]
+[Flags]
 public enum GciBannerIconFlags : byte
 {
     None = 0,

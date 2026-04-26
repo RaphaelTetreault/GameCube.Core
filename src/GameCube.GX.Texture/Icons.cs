@@ -9,11 +9,11 @@ namespace GameCube.GX.Texture;
 public class Icons
 {
     // CONSTANTS
-    const int IconWidth = 32;
-    const int IconHeight = 32;
-    const int MaxIcons = 8;
-    const TextureFormat DirectFormat = TextureFormat.RGB5A3;
-    const TextureFormat IndirectFormat = TextureFormat.CI8;
+    public const int IconWidth = 32;
+    public const int IconHeight = 32;
+    public const int MaxIcons = 8;
+    public const TextureFormat DirectFormat = TextureFormat.RGB5A3;
+    public const TextureFormat IndirectFormat = TextureFormat.CI8;
 
     // FIELDS
     private GciTextureFormat iconFormat;
@@ -122,22 +122,29 @@ public class Icons
     public void Validate()
     {
         // Check to see if new texture is not null after a null texture
-        bool lastNotNull = false;
-        for (int i = 0; i < iconTextures.Length; i++)
+        for (int i = 1; i < iconTextures.Length; i++)
         {
-            bool isNull = iconTextures[i] is null;
-            if (isNull && lastNotNull)
+            bool lastIsNull = iconTextures[i-1] is null;
+            bool currNotNull = iconTextures[i] is not null;
+            if (currNotNull && lastIsNull)
             {
                 string msg = $"Icon index {i-1} (null) was followed by " +
                     $"icon index {i} which is not null. Make sure the " +
                     $"sequence of icons has no null gap.";
                 throw new Exception(msg);
             }
-            lastNotNull = isNull;
+        }
+
+        // Constrain icon count to 8 max
+        int iconCount = CountIcons();
+        if (iconCount < 1 || MaxIcons < iconCount)
+        {
+            string msg = $"{nameof(iconCount)} must be in range of 1-{MaxIcons}.";
+            throw new Exception(msg);
         }
 
         // Ensure dimensions
-        for (int i = 0; i < iconTextures.Length; i++)
+        for (int i = 0; i < iconCount; i++)
         {
             Texture icon = iconTextures[i];
             bool hasInvalidWidth = icon.Width != IconWidth;
@@ -150,14 +157,6 @@ public class Icons
                     $"Icon must have a dimension of exactly ({IconWidth}, {IconHeight}).";
                 throw new Exception(msg);
             }
-        }
-
-        // Constrain icon count to 8 max
-        int iconCount = CountIcons();
-        if (iconCount < 1 || MaxIcons < iconCount)
-        {
-            string msg = $"{nameof(iconCount)} must be in range of 1-{MaxIcons}.";
-            throw new Exception(msg);
         }
     }
 

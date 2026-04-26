@@ -9,10 +9,10 @@ namespace GameCube.GX.Texture;
 public class Banner
 {
     // CONSTANTS
-    const int BannerWidth = 96;
-    const int BannerHeight = 32;
-    const TextureFormat DirectFormat = TextureFormat.RGB5A3;
-    const TextureFormat IndirectFormat = TextureFormat.CI8;
+    public const int BannerWidth = 96;
+    public const int BannerHeight = 32;
+    public const TextureFormat DirectFormat = TextureFormat.RGB5A3;
+    public const TextureFormat IndirectFormat = TextureFormat.CI8;
 
     // FIELDS
     private GciTextureFormat format;

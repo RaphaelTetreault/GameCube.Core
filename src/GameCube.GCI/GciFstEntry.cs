@@ -1,4 +1,5 @@
 ﻿using GameCube.Common;
+using GameCube.DiskImage;
 using GameCube.GX.Texture;
 using Manifold.IO;
 using System;
@@ -14,16 +15,12 @@ namespace GameCube.GCI;
 public record struct GciFstEntry :
     IBinarySerializable
 {
-    public const int Size = 0x40; // 64 bytes
-    public const int InternalFileNameLength = 32;
-    public static readonly Encoding Windows1252Encoding = TextEncoding.Windows1252;
-    public static readonly Encoding ShiftJisEncoding = TextEncoding.ShiftJIS;
-
     public const Endianness endianness = Endianness.BigEndian;
+    public const int Size = 0x40; // 64 bytes
     public const int BlockSize = 0x2000; // 8192
-    public const int MaxFileNameLength = 32;
     public const byte Const0x06 = 0xFF;
     public const ushort Const0x3A = 0xFFFF;
+    public const int InternalFileNameLength = 32;
 
     // FIELDS
     private string gameID;                          // 0x00 eg. GFZJ8P, etc. All codes are *8P instead of *01.
@@ -63,7 +60,7 @@ public record struct GciFstEntry :
     public string InternalFileName
     {
         readonly get => internalFileName;
-        set => internalFileName = SanitizeFileName(value);
+        set => internalFileName = SanitizeInternalFileName(value);
     }
 
     /// <summary>
@@ -79,17 +76,17 @@ public record struct GciFstEntry :
     /// <summary>
     ///     
     /// </summary>
-    public GciImageFormat ImageFormat { readonly get => imageFormat; set => imageFormat = value; }
+    public GciImageFormat GciImageFormat { readonly get => imageFormat; set => imageFormat = value; }
 
     /// <summary>
     ///     
     /// </summary>
-    public GciAnimationSpeed AnimationSpeed { readonly get => animationSpeed; set => animationSpeed = value; }
+    public GciAnimationSpeed GciAnimationSpeed { readonly get => animationSpeed; set => animationSpeed = value; }
 
     /// <summary>
     ///     
     /// </summary>
-    public GciPermissionFlags PermissionFlags { readonly get => permissionFlags; set => permissionFlags = value; }
+    public GciPermissionFlags GciPermissionFlags { readonly get => permissionFlags; set => permissionFlags = value; }
 
     /// <summary>
     ///     
@@ -113,21 +110,19 @@ public record struct GciFstEntry :
 
     #endregion
 
-    public DateTime SaveTime { get; private set; }
+    public readonly Pointer GetImageDataPtr(Pointer baseAddress) => baseAddress + ImageDataOffset;
 
-    public readonly Pointer GetImageDataPtr(Pointer baseAddress)
-        => baseAddress + ImageDataOffset;
+    public readonly Pointer GetCommentPtr(Pointer baseAddress) => baseAddress + commentOffset;
 
-    public readonly Pointer GetCommentPtr(Pointer baseAddress)
-        => baseAddress + commentOffset;
 
     public void Deserialize(EndianBinaryReader reader)
     {
         // Read
         reader.Read(ref gameID, TextEncoding.ShiftJIS, 6);
         reader.AssertValue(reader.ReadByte, Const0x06);
+        Encoding encoding = GetTextEncoding();
         reader.Read(ref bannerAndIconFlags);
-        reader.Read(ref internalFileName, Windows1252Encoding, InternalFileNameLength);
+        reader.Read(ref internalFileName, encoding, InternalFileNameLength);
         reader.Read(ref modificationTime);
         reader.Read(ref imageDataOffset);
         reader.Read(ref imageFormat);
@@ -150,13 +145,11 @@ public record struct GciFstEntry :
         Assert.IsTrue(internalFileName.Length <= InternalFileNameLength);
 
         // Prep some variables
-        // TODO: ptrs
-        SetTime(DateTime.Now);
         int bytesPadInternalFileName = InternalFileNameLength - internalFileName.Length;
-        Encoding encoding = GetTextEncoding(gameID);
+        Encoding encoding = GetTextEncoding();
 
         // Write
-        writer.Write(gameID);
+        writer.Write(gameID, encoding, false);
         writer.Write(Const0x06);
         writer.Write(bannerAndIconFlags);
         writer.Write(internalFileName, encoding, false);
@@ -173,37 +166,25 @@ public record struct GciFstEntry :
         writer.Write(commentOffset);
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    public string GetDefaultComment()
-    {
-        //string time = SaveTime.ToString("yyyy/MM/dd hh:mm.ss");
-        string time = SaveTime.ToString("yy/MM/dd hh:mm");
-        var assembly = System.Reflection.Assembly.GetEntryAssembly();
-        string? assemblyName = assembly?.GetName().Name;
-        string name = assemblyName is null ? string.Empty : assemblyName;
-        string comment = time;
-        //string comment = $"Created by {name} at {time}.";
-        return comment;
-    }
-
-    /// <summary>
-    ///     Sets the header timestamp to the provided <paramref name="dateTime"/>.
-    /// </summary>
-    /// <param name="dateTime">The time to use.</param>
-    private void SetTime(DateTime dateTime)
+    public static uint GetModificationTime(DateTime dateTime)
     {
         DateTime epoch = new(2000, 01, 01);
         TimeSpan timeSpan = dateTime - epoch;
         uint secondsSince2000 = (uint)timeSpan.TotalSeconds;
-        modificationTime = secondsSince2000;
-        //
-        SaveTime = dateTime;
+        return secondsSince2000;
     }
 
-
+    public static string GetDefaultComment(DateTime dateTime)
+    {
+        //string time = SaveTime.ToString("yyyy/MM/dd hh:mm.ss");
+        string time = dateTime.ToString("yy/MM/dd hh:mm");
+        //var assembly = System.Reflection.Assembly.GetEntryAssembly();
+        //string? assemblyName = assembly?.GetName().Name;
+        //string name = assemblyName is null ? string.Empty : assemblyName;
+        string comment = time;
+        //string comment = $"Created by {name} at {time}.";
+        return comment;
+    }
 
     /// <summary>
     ///     Set filename and prevent file length overflow.
@@ -212,7 +193,7 @@ public record struct GciFstEntry :
     /// <returns>
     ///     True if <paramref name="internalFileName"/> fits in character limit, false otherwise.
     /// </returns>
-    public static string SanitizeFileName(string internalFileName)
+    private static string SanitizeInternalFileName(string internalFileName)
     {
         //TODO 2026/04/26:
         //  Key insight, internal file name is what hangs up game...
@@ -241,22 +222,14 @@ public record struct GciFstEntry :
         return internalFileName;
     }
 
-    public static GciBannerIconFlags SanitizeBannerAndIconFlags(GciBannerIconFlags value)
+    private static GciBannerIconFlags SanitizeBannerAndIconFlags(GciBannerIconFlags value)
     {
-        if ((value & GciBannerIconFlags.Metadata_InvalidBanner) == GciBannerIconFlags.Metadata_InvalidBanner)
-        {
-            string msg =
-                $"{nameof(BannerIconFlags)} cannot be both " +
-                $"{nameof(GciBannerIconFlags.IndirectColorCI8)} and " +
-                $"{nameof(GciBannerIconFlags.DirectColorRGB5A3)}.";
-            throw new ArgumentException(msg);
-        }
-
+        value.Validate();
         return value;
     }
 
     /// <summary>
-    ///     Get the correct text endoing based on the region of <paramref name="gameID"/>.
+    ///     Get the correct text encoding based on the region of <paramref name="gameID"/>.
     /// </summary>
     /// <param name="gameID">The Game ID for this file.</param>
     /// <returns>
@@ -265,16 +238,22 @@ public record struct GciFstEntry :
     /// <exception cref="NotImplementedException">
     ///     Thrown if <paramref name="gameID"/> region code is not implemented.
     /// </exception>
-    private static Encoding GetTextEncoding(string gameID)
+    public readonly Encoding GetTextEncoding()
     {
-        char region = gameID.ToUpper()[4];
+        char region = GetRegionChar();
         return region switch
         {
-            'E' => Windows1252Encoding,
-            'J' => ShiftJisEncoding,
-            'P' => Windows1252Encoding,
+            'E' => TextEncoding.Windows1252,
+            'J' => TextEncoding.ShiftJIS,
+            'P' => TextEncoding.Windows1252,
             _ => throw new NotImplementedException($"Unhandled region code '{region}'."),
         };
+    }
+
+    public readonly char GetRegionChar()
+    {
+        char region = gameID.ToUpper()[3];
+        return region;
     }
 
     public readonly int[] GetAnimationFrameDurations()
@@ -316,4 +295,6 @@ public record struct GciFstEntry :
         int paddingLength = BlockSize - (position % BlockSize);
         return paddingLength;
     }
+
+
 }
