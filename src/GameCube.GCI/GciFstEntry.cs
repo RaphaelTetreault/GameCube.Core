@@ -13,6 +13,7 @@ namespace GameCube.GCI;
 ///     This stub of data belongs in the FST of the GameCube memory card.
 /// </summary>
 public record struct GciFstEntry :
+    IBinaryAddressable,
     IBinarySerializable
 {
     public const Endianness endianness = Endianness.BigEndian;
@@ -37,6 +38,8 @@ public record struct GciFstEntry :
     private ushort blockCount;                      // 0x38 
     // Constant 0xFFFF                              // 0x3A const 0xFFFF
     private Offset commentOffset;                   // 0x3C offset after header (0x40) to start of GCI comment
+
+    public AddressRange AddressRange { get; set; }
 
     #region Accessors
 
@@ -118,6 +121,7 @@ public record struct GciFstEntry :
     public void Deserialize(EndianBinaryReader reader)
     {
         // Read
+        AddressRange.RecordStartAddress(reader);
         reader.Read(ref gameID, TextEncoding.ShiftJIS, 6);
         reader.AssertValue(reader.ReadByte, Const0x06);
         Encoding encoding = GetTextEncoding();
@@ -133,12 +137,14 @@ public record struct GciFstEntry :
         reader.Read(ref blockCount);
         reader.AssertValue(reader.ReadUInt16, Const0x3A);
         reader.Read(ref commentOffset);
+        AddressRange.RecordEndAddress(reader);
 
         // Validation
+        Assert.IsTrue(AddressRange.Size == Size);
         BannerIconFlags.Validate();
     }
 
-    public void Serialize(EndianBinaryWriter writer)
+    public readonly void Serialize(EndianBinaryWriter writer)
     {
         // Validation
         BannerIconFlags.Validate();
@@ -149,6 +155,7 @@ public record struct GciFstEntry :
         Encoding encoding = GetTextEncoding();
 
         // Write
+        AddressRange.RecordStartAddress(writer);
         writer.Write(gameID, encoding, false);
         writer.Write(Const0x06);
         writer.Write(bannerAndIconFlags);
@@ -164,6 +171,8 @@ public record struct GciFstEntry :
         writer.Write(blockCount);
         writer.Write(Const0x3A);
         writer.Write(commentOffset);
+        AddressRange.RecordEndAddress(writer);
+        Assert.IsTrue(AddressRange.Size == Size);
     }
 
     public static uint GetModificationTime(DateTime dateTime)
@@ -195,20 +204,7 @@ public record struct GciFstEntry :
     /// </returns>
     private static string SanitizeInternalFileName(string internalFileName)
     {
-        //TODO 2026/04/26:
-        //  Key insight, internal file name is what hangs up game...
-        //  Must be .dat extension in file. Causes file loading hang otherwise.
-        //  Must have fze020 for whatever reason. Causes pointer issues.
-        //  To that point. file is fze_02000_02000 (no _ in actual). 02000 repeats twice.
-
-        // TODO: manage this better
-        string fileName = Path.GetFileNameWithoutExtension(internalFileName);
-        string extension = Path.GetExtension(internalFileName);
-        if (extension != ".dat")
-        {
-            string msg = $"Internal file name must end in \".dat!\"";
-            throw new ArgumentException(msg);
-        }
+        //TODO: better warnings, keeping the file extension, etc.
 
         // Trim file name if it is too long
         int maxLength = InternalFileNameLength - 1;
