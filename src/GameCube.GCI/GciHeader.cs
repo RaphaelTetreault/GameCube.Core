@@ -1,6 +1,7 @@
 ﻿using GameCube.DiskImage;
 using Manifold.IO;
 using System;
+using System.IO;
 
 namespace GameCube.GCI;
 
@@ -46,14 +47,14 @@ public class GciHeader :
     ///     Time of file's last modification in seconds since 12am, January 1st, 2000
     /// </summary>
     public uint ModificationTime { get => modificationTime; set => modificationTime = value; }
-    //public Offset ImageDataOffset { get => imageDataOffset; set => imageDataOffset = value; }
+    public Offset ImageDataOffset { get => imageDataOffset; set => imageDataOffset = value; }
     public ImageFormat ImageFormat { get => imageFormat; set => imageFormat = value; }
     public AnimationSpeed AnimationSpeed { get => animationSpeed; set => animationSpeed = value; }
     public PermissionFlags PermissionFlags { get => permissionFlags; set => permissionFlags = value; }
     public byte CopyCount { get => copyCount; set => copyCount = value; }
     public ushort FirstBlockIndex { get => firstBlockIndex; set => firstBlockIndex = value; }
     public ushort BlockCount { get => blockCount; set => blockCount = value; }
-    //public Offset CommentOffset { get => commentOffset; set => commentOffset = value; }
+    public Offset CommentOffset { get => commentOffset; set => commentOffset = value; }
     public DateTime SaveTime { get; private set; }
 
     public Pointer ImageDataPtr { get; private set; }
@@ -93,7 +94,7 @@ public class GciHeader :
         SetTime(DateTime.Now);
 
         writer.Write(gameID);
-        writer.Write(0xFF);
+        writer.Write((byte)0xFF);
         writer.Write(bannerAndIconFlags);
         writer.Write(fileName, GetTextEncoding(gameID), false);
         writer.WritePadding(0x00, InternalFileNameLength - fileName.Length);
@@ -105,7 +106,7 @@ public class GciHeader :
         writer.Write(copyCount);
         writer.Write(firstBlockIndex);
         writer.Write(blockCount);
-        writer.Write(0xFFFF);
+        writer.Write((ushort)0xFFFF);
         writer.Write(commentOffset);
     }
 
@@ -115,11 +116,13 @@ public class GciHeader :
     /// <returns></returns>
     public string GetDefaultComment()
     {
-        string time = SaveTime.ToString("yyyy/MM/dd hh:mm.ss");
+        //string time = SaveTime.ToString("yyyy/MM/dd hh:mm.ss");
+        string time = SaveTime.ToString("yy/MM/dd hh:mm");
         var assembly = System.Reflection.Assembly.GetEntryAssembly();
         string? assemblyName = assembly?.GetName().Name;
         string name = assemblyName is null ? string.Empty : assemblyName;
-        string comment = $"Created by {name} at {time}.";
+        string comment = time;
+        //string comment = $"Created by {name} at {time}.";
         return comment;
     }
 
@@ -131,23 +134,13 @@ public class GciHeader :
     {
         DateTime epoch = new(2000, 01, 01);
         TimeSpan timeSpan = dateTime - epoch;
-        uint secondsSince2000 = (uint)timeSpan.Seconds;
+        uint secondsSince2000 = (uint)timeSpan.TotalSeconds;
         modificationTime = secondsSince2000;
         //
         SaveTime = dateTime;
     }
 
-    /// <summary>
-    ///     Compute file CRC
-    /// </summary>
-    /// <returns>
-    ///     
-    /// </returns>
-    /// <exception cref="NotImplementedException"></exception>
-    public ushort ComputeCRC()
-    {
-        throw new NotImplementedException();
-    }
+
 
     /// <summary>
     ///     Set filename and prevent file length overflow.
@@ -158,11 +151,21 @@ public class GciHeader :
     /// </returns>
     public bool SafeSetInternalFileName(string internalFileName)
     {
+        // TODO: manage this better
+        string fileName = Path.GetFileNameWithoutExtension(internalFileName);
+        string extension = Path.GetExtension(internalFileName);
+        if (extension != ".dat")
+        {
+            string msg = $"Internal file name must end in \".dat!\"";
+            throw new ArgumentException(msg);
+        }
+
         // Trim file name if it is too long
-        bool fileNameFits = internalFileName.Length <= InternalFileNameLength;
+        int maxLength = InternalFileNameLength - 1;
+        bool fileNameFits = internalFileName.Length <= maxLength;
         if (!fileNameFits)
         {
-            internalFileName = internalFileName[..InternalFileNameLength];
+            internalFileName = internalFileName[..maxLength];
         }
 
         // Set file name

@@ -10,7 +10,7 @@ namespace GameCube.GCI;
 public abstract class GciWithUniqueID<TBinarySerializable> : Gci<TBinarySerializable>
     where TBinarySerializable : IBinarySerializable, IBinaryFileType, new()
 {
-    public abstract ushort Unknown { get; }
+    public abstract ushort Checksum { get; }
     public abstract ushort UniqueID { get; }
     public abstract ushort[] UniqueIDs { get; }
 

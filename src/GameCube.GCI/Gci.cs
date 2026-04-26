@@ -69,11 +69,13 @@ public abstract class Gci<TBinarySerializable> :
         Assert.IsTrue(FileData.Endianness == Endianness, "Proved that data can differ in endianness from container.");
 
         // Pad to GC block alginment + "header" bytes.
-        int unalignedBytes = (int)writer.BaseStream.Position % MinimumBlockSize;
-        bool isAlgined = unalignedBytes == MinimumHeaderSize;
-        if (!isAlgined)
+        int bytesWritten = (int)writer.BaseStream.Position - MinimumHeaderSize;
+        int bytesOverBlockSize = bytesWritten % MinimumBlockSize;
+        bool isAligned = bytesOverBlockSize == 0;
+        if (!isAligned)
         {
-            writer.WritePadding(0x00, unalignedBytes);
+            int paddingSize = MinimumBlockSize - bytesOverBlockSize;
+            writer.WritePadding(0x00, paddingSize);
         }
     }
 
@@ -89,7 +91,7 @@ public abstract class Gci<TBinarySerializable> :
     }
     public void SetIcons(Texture[] icons)
     {
-        // Encure arrays is not too large
+        // Ensure arrays is not too large
         bool tooManyIcons = icons.Length > MaxIcons;
         if (tooManyIcons)
         {
