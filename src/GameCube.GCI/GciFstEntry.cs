@@ -121,7 +121,9 @@ public record struct GciFstEntry :
     public void Deserialize(EndianBinaryReader reader)
     {
         // Read
-        AddressRange.RecordStartAddress(reader);
+        AddressRange addressRange = new();
+        addressRange.RecordStartAddress(reader);
+        //
         reader.Read(ref gameID, TextEncoding.ShiftJIS, 6);
         reader.AssertValue(reader.ReadByte, Const0x06);
         Encoding encoding = GetTextEncoding();
@@ -137,14 +139,15 @@ public record struct GciFstEntry :
         reader.Read(ref blockCount);
         reader.AssertValue(reader.ReadUInt16, Const0x3A);
         reader.Read(ref commentOffset);
-        AddressRange.RecordEndAddress(reader);
-
+        //
+        addressRange.RecordEndAddress(reader);
+        AddressRange = addressRange;
         // Validation
         Assert.IsTrue(AddressRange.Size == Size);
         BannerIconFlags.Validate();
     }
 
-    public readonly void Serialize(EndianBinaryWriter writer)
+    public void Serialize(EndianBinaryWriter writer)
     {
         // Validation
         BannerIconFlags.Validate();
@@ -155,7 +158,9 @@ public record struct GciFstEntry :
         Encoding encoding = GetTextEncoding();
 
         // Write
-        AddressRange.RecordStartAddress(writer);
+        AddressRange addressRange = new();
+        addressRange.RecordStartAddress(writer);
+        //
         writer.Write(gameID, encoding, false);
         writer.Write(Const0x06);
         writer.Write(bannerAndIconFlags);
@@ -171,7 +176,10 @@ public record struct GciFstEntry :
         writer.Write(blockCount);
         writer.Write(Const0x3A);
         writer.Write(commentOffset);
-        AddressRange.RecordEndAddress(writer);
+        //
+        addressRange.RecordEndAddress(writer);
+        AddressRange = addressRange;
+        // Validation
         Assert.IsTrue(AddressRange.Size == Size);
     }
 
