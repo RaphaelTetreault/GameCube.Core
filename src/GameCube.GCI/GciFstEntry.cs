@@ -12,10 +12,12 @@ namespace GameCube.GCI;
 ///     GCI File System Table Entry.
 ///     This stub of data belongs in the FST of the GameCube memory card.
 /// </summary>
+/// <seealso cref="https://github.com/suloku/gcmm/blob/master/source/gci.h"/>
 public record struct GciFstEntry :
     IBinaryAddressable,
     IBinarySerializable
 {
+    // CONSTANTS
     public const Endianness endianness = Endianness.BigEndian;
     public const int Size = 0x40; // 64 bytes
     public const int BlockSize = 0x2000; // 8192
@@ -24,7 +26,7 @@ public record struct GciFstEntry :
     public const int InternalFileNameLength = 32;
 
     // FIELDS
-    private string gameID;                          // 0x00 eg. GFZJ8P, etc. All codes are *8P instead of *01.
+    private string gameID;                          // 0x00 eg. GFZJ8P
     // Constant 0xFF                                // 0x06 const 0xFF
     private GciBannerIconFlags bannerAndIconFlags;  // 0x07 
     private string internalFileName;                // 0x08 32 bytes including null terminating 0x00
@@ -54,7 +56,7 @@ public record struct GciFstEntry :
     public GciBannerIconFlags BannerIconFlags
     {
         readonly get => bannerAndIconFlags;
-        set => bannerAndIconFlags = SanitizeBannerAndIconFlags(value);
+        set => bannerAndIconFlags = SanitizeBannerIconFlags(value);
     }
 
     /// <summary>
@@ -226,7 +228,7 @@ public record struct GciFstEntry :
         return internalFileName;
     }
 
-    private static GciBannerIconFlags SanitizeBannerAndIconFlags(GciBannerIconFlags value)
+    private static GciBannerIconFlags SanitizeBannerIconFlags(GciBannerIconFlags value)
     {
         value.Validate();
         return value;
@@ -299,6 +301,5 @@ public record struct GciFstEntry :
         int paddingLength = BlockSize - (position % BlockSize);
         return paddingLength;
     }
-
 
 }
