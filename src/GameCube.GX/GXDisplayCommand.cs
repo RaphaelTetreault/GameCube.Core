@@ -1,4 +1,5 @@
 ﻿using Manifold.IO;
+using System.Runtime.CompilerServices;
 
 namespace GameCube.GX;
 
@@ -17,6 +18,19 @@ public class GXDisplayCommand :
     private byte command;
     private GXPrimitive primitive;
     private GXVertexFormat vertexFormat;
+
+
+    // CONSTRUCTORS
+    public GXDisplayCommand() { }
+    public GXDisplayCommand(byte command)
+    {
+        this.command = command;
+    }
+    public GXDisplayCommand(GXPrimitive primitive, GXVertexFormat vertexFormat)
+    {
+        this.primitive = primitive;
+        this.vertexFormat = vertexFormat;
+    }
 
 
     // PROPERTIES
@@ -56,4 +70,17 @@ public class GXDisplayCommand :
         writer.Write(command);
     }
 
+
+    // OPERATORS
+    public static implicit operator GXDisplayCommand(byte command)
+    {
+        var value = new GXDisplayCommand(command);
+        return value;
+    }
+
+    public static implicit operator byte(GXDisplayCommand value)
+    {
+        var @byte = value.command;
+        return @byte;
+    }
 }
