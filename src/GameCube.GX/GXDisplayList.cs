@@ -19,33 +19,31 @@ public class GXDisplayList :
 
     //
     private GXDisplayCommand gxCommand;
-    //private Primitive primitive;
-    //private VertexFormat vertexFormat;
     
     private ushort count;
-    public byte[] pn_mtx_idx;
-    public byte[] tex0_mtx_idx;
-    public byte[] tex1_mtx_idx;
-    public byte[] tex2_mtx_idx;
-    public byte[] tex3_mtx_idx;
-    public byte[] tex4_mtx_idx;
-    public byte[] tex5_mtx_idx;
-    public byte[] tex6_mtx_idx;
-    public byte[] tex7_mtx_idx;
-    public Vector3[] pos;
-    public Vector3[] nrm; // normal
-    public Vector3[] bnm; // binormal
-    public Vector3[] tan; // tangent
-    public GXColor[] clr0;
-    public GXColor[] clr1;
-    public Vector2[] tex0;
-    public Vector2[] tex1;
-    public Vector2[] tex2;
-    public Vector2[] tex3;
-    public Vector2[] tex4;
-    public Vector2[] tex5;
-    public Vector2[] tex6;
-    public Vector2[] tex7;
+    public byte[] pn_mtx_idx = [];
+    public byte[] tex0_mtx_idx = [];
+    public byte[] tex1_mtx_idx = [];
+    public byte[] tex2_mtx_idx = [];
+    public byte[] tex3_mtx_idx = [];
+    public byte[] tex4_mtx_idx = [];
+    public byte[] tex5_mtx_idx = [];
+    public byte[] tex6_mtx_idx = [];
+    public byte[] tex7_mtx_idx = [];
+    public Vector3[] pos = [];
+    public Vector3[] nrm = []; // normal
+    public Vector3[] bnm = []; // binormal
+    public Vector3[] tan = []; // tangent
+    public GXColor[] clr0 = [];
+    public GXColor[] clr1 = [];
+    public Vector2[] tex0 = [];
+    public Vector2[] tex1 = [];
+    public Vector2[] tex2 = [];
+    public Vector2[] tex3 = [];
+    public Vector2[] tex4 = [];
+    public Vector2[] tex5 = [];
+    public Vector2[] tex6 = [];
+    public Vector2[] tex7 = [];
     // TODO
     // pos mtx array
     // nrm mtx array
@@ -57,14 +55,13 @@ public class GXDisplayList :
     public GXVertexAttributeTable Vat { get => vat; set => vat = value; }
     public GXAttributeFlags Attributes { get => attributes; set => attributes = value; }
     public GXDisplayCommand GxCommand { get => gxCommand; set => gxCommand = value; }
-    //public Primitive Primitive { get => primitive; set => primitive = value; }
-    //public VertexFormat VertexFormat { get => vertexFormat; set => vertexFormat = value; }
     public ushort VertexCount { get => count; set => count = value; }
 
-    public GXDisplayList(GXAttributeFlags attr, GXVertexAttributeTable vat)
+    public GXDisplayList(GXAttributeFlags vertexAttributes, GXVertexAttributeTable vat)
     {
-        this.attributes = attr;
+        this.attributes = vertexAttributes;
         this.vat = vat;
+        this.gxCommand = 0;
     }
 
 
@@ -82,17 +79,17 @@ public class GXDisplayList :
         bnm[i] = GXUtility.ReadNormal(reader, fmt.nbt.NElements, fmt.nbt.ComponentType, fmt.nbt.NFracBits);
         tan[i] = GXUtility.ReadNormal(reader, fmt.nbt.NElements, fmt.nbt.ComponentType, fmt.nbt.NFracBits);
     }
-    private void ReadCLR(EndianBinaryReader reader, GXVertexAttribute va, int i, GXColor[] clr)
+    private static void ReadCLR(EndianBinaryReader reader, GXVertexAttribute va, int i, GXColor[] clr)
     {
         var color = new GXColor(va.ComponentType);
         color.Deserialize(reader);
         clr[i] = color;
     }
-    private void ReadTEX(EndianBinaryReader reader, GXVertexAttribute va, int i, Vector2[] tex)
+    private static void ReadTEX(EndianBinaryReader reader, GXVertexAttribute va, int i, Vector2[] tex)
     {
         tex[i] = GXUtility.ReadUV(reader, va.NElements, va.ComponentType, va.NFracBits);
     }
-    private void ReadMTXIDX(EndianBinaryReader reader, int i, byte[] mtx_idx)
+    private static void ReadMTXIDX(EndianBinaryReader reader, int i, byte[] mtx_idx)
     {
         reader.Read(ref mtx_idx[i]);
     }
@@ -100,35 +97,34 @@ public class GXDisplayList :
 
     private void WritePOS(EndianBinaryWriter writer, GXVertexAttributeFormat fmt, int i)
     {
-        var va = fmt.pos;
+        GXVertexAttribute va = fmt.pos;
         GXUtility.WritePosition(writer, pos[i], va.NElements, va.ComponentType, va.NFracBits);
     }
     private void WriteNRM(EndianBinaryWriter writer, GXVertexAttributeFormat fmt, int i)
     {
-        var va = fmt.nrm;
+        GXVertexAttribute va = fmt.nrm;
         GXUtility.WriteNormal(writer, nrm[i], va.NElements, va.ComponentType, va.NFracBits);
     }
     private void WriteNBT(EndianBinaryWriter writer, GXVertexAttributeFormat fmt, int i)
     {
-        var va = fmt.nbt;
+        GXVertexAttribute va = fmt.nbt;
         GXUtility.WriteNormal(writer, nrm[i], va.NElements, va.ComponentType, va.NFracBits);
         GXUtility.WriteNormal(writer, bnm[i], va.NElements, va.ComponentType, va.NFracBits);
         GXUtility.WriteNormal(writer, tan[i], va.NElements, va.ComponentType, va.NFracBits);
     }
-    private void WriteCLR(EndianBinaryWriter writer, GXVertexAttribute va, int i, GXColor[] clr)
+    private static void WriteCLR(EndianBinaryWriter writer, GXVertexAttribute va, int i, GXColor[] clr)
     {
         clr[i].ComponentType = va.ComponentType;
         clr[i].Serialize(writer);
     }
-    private void WriteTEX(EndianBinaryWriter writer, GXVertexAttribute va, int i, Vector2[] tex)
+    private static void WriteTEX(EndianBinaryWriter writer, GXVertexAttribute va, int i, Vector2[] tex)
     {
         GXUtility.WriteUV(writer, tex[i], va.NElements, va.ComponentType, va.NFracBits);
     }
-    private void WriteMTXIDX(EndianBinaryWriter writer, int i, byte[] mtx_idx)
+    private static void WriteMTXIDX(EndianBinaryWriter writer, int i, byte[] mtx_idx)
     {
         writer.Write(mtx_idx[i]);
     }
-
 
 
     public void Deserialize(EndianBinaryReader reader)
@@ -181,21 +177,21 @@ public class GXDisplayList :
             Assert.IsTrue(hasNRM ^ hasNBT, "Data has both NRM and NBT. NRM data will be overwritten by NBT.NRM");
 
             //
-            pn_mtx_idx = hasPNMTXIDX ? new byte[count] : new byte[0];
-            pos = hasPOS ? new Vector3[count] : new Vector3[0];
-            nrm = hasNRM || hasNBT ? new Vector3[count] : new Vector3[0];
-            bnm = hasNBT ? new Vector3[count] : new Vector3[0];
-            tan = hasNBT ? new Vector3[count] : new Vector3[0];
-            clr0 = hasCLR0 ? new GXColor[count] : new GXColor[0];
-            clr1 = hasCLR1 ? new GXColor[count] : new GXColor[0];
-            tex0 = hasTEX0 ? new Vector2[count] : new Vector2[0];
-            tex1 = hasTEX1 ? new Vector2[count] : new Vector2[0];
-            tex2 = hasTEX2 ? new Vector2[count] : new Vector2[0];
-            tex3 = hasTEX3 ? new Vector2[count] : new Vector2[0];
-            tex4 = hasTEX4 ? new Vector2[count] : new Vector2[0];
-            tex5 = hasTEX5 ? new Vector2[count] : new Vector2[0];
-            tex6 = hasTEX6 ? new Vector2[count] : new Vector2[0];
-            tex7 = hasTEX7 ? new Vector2[count] : new Vector2[0];
+            pn_mtx_idx = hasPNMTXIDX ? new byte[count] : [];
+            pos = hasPOS ? new Vector3[count] : [];
+            nrm = hasNRM || hasNBT ? new Vector3[count] : [];
+            bnm = hasNBT ? new Vector3[count] : [];
+            tan = hasNBT ? new Vector3[count] : [];
+            clr0 = hasCLR0 ? new GXColor[count] : [];
+            clr1 = hasCLR1 ? new GXColor[count] : [];
+            tex0 = hasTEX0 ? new Vector2[count] : [];
+            tex1 = hasTEX1 ? new Vector2[count] : [];
+            tex2 = hasTEX2 ? new Vector2[count] : [];
+            tex3 = hasTEX3 ? new Vector2[count] : [];
+            tex4 = hasTEX4 ? new Vector2[count] : [];
+            tex5 = hasTEX5 ? new Vector2[count] : [];
+            tex6 = hasTEX6 ? new Vector2[count] : [];
+            tex7 = hasTEX7 ? new Vector2[count] : [];
 
             // For each existing component, add a delegate of their function to a list, called in order
             var deserializeComponents = new List<Action<int>>(32);
@@ -224,12 +220,8 @@ public class GXDisplayList :
 
             // READ IN DATA
             for (int i = 0; i < count; i++)
-            {
                 foreach (var deserializeComponent in deserializeComponents)
-                {
                     deserializeComponent.Invoke(i);
-                }
-            }
         }
         this.RecordEndAddress(reader);
     }
@@ -299,12 +291,8 @@ public class GXDisplayList :
             writer.Write(gxCommand);
             writer.Write(count);
             for (int i = 0; i < count; i++)
-            {
                 foreach (var serializeComponent in serializeComponents)
-                {
                     serializeComponent.Invoke(i);
-                }
-            }
         }
         this.RecordEndAddress(writer);
     }
