@@ -9,6 +9,14 @@ namespace GameCube.GX;
 /// </summary>
 public static class GXUtility
 {
+    /// <summary>
+    ///     GameCube GPU No-Operation opcode
+    /// </summary>
+    public const byte GX_NOP = 0x00;
+
+    /// <summary>
+    ///     GameCube GPU FIFO alignment.
+    /// </summary>
     public const int GX_FIFO_ALIGN = 32;
 
     public static Vector3 ReadPos(EndianBinaryReader reader, GXComponentCount nElements, GXComponentType componentType, int nFracs)
