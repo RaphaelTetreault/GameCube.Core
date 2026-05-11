@@ -79,7 +79,7 @@ public struct GXColor :
     }
 
 
-    //
+    // SERIALIZATION
     public void Deserialize(EndianBinaryReader reader)
     {
         switch (ComponentType)
