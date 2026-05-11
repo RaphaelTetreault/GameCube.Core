@@ -1,4 +1,5 @@
 ﻿using Manifold.IO;
+using System;
 
 namespace GameCube.GX.Texture;
 
@@ -23,10 +24,10 @@ public sealed class TextureEncodingRGBA8 : DirectEncoding
         int nBytes = nColors * BytesPerPixel;
         var bytes = reader.ReadBytes(nBytes);
         var colors = new TextureColor[nColors];
-        var a = ExtractBytes(bytes, 33, 2, 16);
-        var r = ExtractBytes(bytes, 32, 2, 16);
-        var g = ExtractBytes(bytes, 01, 2, 16);
-        var b = ExtractBytes(bytes, 00, 2, 16);
+        var a = ExtractRGBA8Bytes(bytes, 33);
+        var r = ExtractRGBA8Bytes(bytes, 32);
+        var g = ExtractRGBA8Bytes(bytes, 1);
+        var b = ExtractRGBA8Bytes(bytes, 0);
         for (int i = 0; i < colors.Length; i++)
             colors[i] = new TextureColor(r[i], g[i], b[i], a[i]);
         directBlock.Colors = colors;
@@ -52,52 +53,64 @@ public sealed class TextureEncodingRGBA8 : DirectEncoding
         }
         int blockByteCount = BlockWidth * BlockHeight * BytesPerPixel;
         var bytes = new byte[blockByteCount];
-        InterleaveBytes(a, 33, 2, 16, ref bytes);
-        InterleaveBytes(r, 32, 2, 16, ref bytes);
-        InterleaveBytes(g, 01, 2, 16, ref bytes);
-        InterleaveBytes(b, 00, 2, 16, ref bytes);
+        InterleaveRGBA8Bytes(a, 33, ref bytes);
+        InterleaveRGBA8Bytes(r, 32, ref bytes);
+        InterleaveRGBA8Bytes(g, 01, ref bytes);
+        InterleaveRGBA8Bytes(b, 00, ref bytes);
         writer.Write(bytes);
     }
 
     // TOOD: make generic on arrays, move elsewhere
 
     /// <summary>
-    /// Iterate over <paramref name="bytes"/> a total of <paramref name="count"/> times, extracting each 
-    /// value from position <paramref name="baseIndex"/> with successive separation of <paramref name="stride"/>.
+    ///     Iterate over <paramref name="bytes"/> a total of <paramref name="count"/> times, extracting each 
+    ///     value from position <paramref name="baseIndex"/> with successive separation of <paramref name="stride"/>.
     /// </summary>
     /// <param name="bytes"></param>
     /// <param name="baseIndex"></param>
-    /// <param name="stride"></param>
-    /// <param name="count"></param>
-    /// <returns></returns>
-    public static byte[] ExtractBytes(byte[] bytes, int baseIndex, int stride, int count)
+    /// <returns>
+    ///     
+    /// </returns>
+    public static byte[] ExtractRGBA8Bytes(ReadOnlySpan<byte> bytes, int baseIndex)
     {
+        const int stride = 2;
+        const int count = 16;
         byte[] values = new byte[count];
-        int valuesIndex = 0;
-        for (int i = baseIndex; i < baseIndex + count * stride; i += stride)
+
+        int dstIndex = 0;
+        int srcIndex = baseIndex;
+        while (srcIndex < baseIndex + count * stride)
         {
-            values[valuesIndex] = bytes[i];
-            valuesIndex++;
+            // Copy
+            values[dstIndex] = bytes[srcIndex];
+            // Increment
+            srcIndex += stride;
+            dstIndex++;
         }
         return values;
     }
 
     /// <summary>
-    /// Iterate over <paramref name="bytes"/> a total of <paramref name="count"/> times, interleaving
-    /// each value to position <paramref name="baseIndex"/> with successive separation of <paramref name="stride"/>.
+    ///     Iterate over <paramref name="bytes"/> a total of <paramref name="count"/> times, interleaving
+    ///     each value to position <paramref name="baseIndex"/> with successive separation of <paramref name="stride"/>.
     /// </summary>
     /// <param name="bytes"></param>
     /// <param name="baseIndex"></param>
-    /// <param name="stride"></param>
-    /// <param name="count"></param>
     /// <param name="destination"></param>
-    public static void InterleaveBytes(byte[] bytes, int baseIndex, int stride, int count, ref byte[] destination)
+    public static void InterleaveRGBA8Bytes(ReadOnlySpan<byte> bytes, int baseIndex, ref byte[] destination)
     {
-        int valuesIndex = 0;
-        for (int i = baseIndex; i < baseIndex + count * stride; i += stride)
+        const int stride = 2;
+        const int count = 16;
+
+        int dstIndex = 0;
+        int srcIndex = baseIndex;
+        while (srcIndex < baseIndex + count * stride)
         {
-            destination[i] = bytes[valuesIndex];
-            valuesIndex++;
+            // Copy
+            destination[srcIndex] = bytes[dstIndex];
+            // Increment
+            srcIndex += stride;
+            dstIndex++;
         }
     }
 

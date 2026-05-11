@@ -86,12 +86,10 @@ public struct TextureColor
     /// <returns>
     ///     Returns the 8-bit grayscale value of this colour.
     /// </returns>
-    public byte GetIntensity()
+    public readonly byte GetIntensity()
     {
-        return (byte)(
-            (r * 0.30f) +
-            (g * 0.59f) +
-            (b * 0.11f));
+        byte intensity = (byte)(r * 0.30f + g * 0.59f + b * 0.11f);
+        return intensity;
     }
 
     /// <summary>
@@ -135,8 +133,10 @@ public struct TextureColor
     /// </returns>
     public static TextureColor FromIA4(byte ia4)
     {
-        byte i = (byte)(((ia4 >> 4) & 0b_0000_1111) / 15f * 255);
-        byte a = (byte)(((ia4 >> 0) & 0b_0000_1111) / 15f * 255);
+        byte i4 = (byte)(ia4 >>> 4 & 0b0000_1111);
+        byte a4 = (byte)(ia4 >>> 0 & 0b0000_1111);
+        byte i = (byte)(i4 << 4 | i4);
+        byte a = (byte)(a4 << 4 | a4);
         var color = new TextureColor(i, a);
         return color;
     }
@@ -150,9 +150,9 @@ public struct TextureColor
     public static byte ToIA4(TextureColor c)
     {
         byte i = c.GetIntensity();
-        byte i4 = (byte)(i >> 4);
-        byte a4 = (byte)(c.a >> 4);
-        byte ia4 = (byte)((i4 << 4) + (a4 << 0));
+        byte i4 = (byte)(i >>> 4);
+        byte a4 = (byte)(c.a >>> 4);
+        byte ia4 = (byte)(i4 << 4 | a4 << 0);
         return ia4;
     }
 
@@ -165,8 +165,8 @@ public struct TextureColor
     /// </returns>
     public static TextureColor FromIA8(ushort ia8)
     {
-        byte i = (byte)((ia8 >> 8) & 0b_1111_1111);
-        byte a = (byte)((ia8 >> 0) & 0b_1111_1111);
+        byte i = (byte)(ia8 >>> 8);
+        byte a = (byte)(ia8 >>> 0);
         var color = new TextureColor(i, a);
         return color;
     }
@@ -181,7 +181,7 @@ public struct TextureColor
     {
         byte i = c.GetIntensity();
         byte a = c.a;
-        ushort ia8 = (ushort)((i << 8) + (a << 00));
+        ushort ia8 = (ushort)(i << 8 | a << 0);
         return ia8;
     }
 
@@ -194,9 +194,15 @@ public struct TextureColor
     /// </returns>
     public static TextureColor FromRGB565(ushort rgb565)
     {
-        byte r = (byte)(((rgb565 >> 11) & (0b_0001_1111)) / 31f * 255);
-        byte g = (byte)(((rgb565 >> 05) & (0b_0011_1111)) / 63f * 255);
-        byte b = (byte)(((rgb565 >> 00) & (0b_0001_1111)) / 31f * 255);
+        byte r5 = (byte)(rgb565 >>> 11 /***********/); // implicit truncation
+        byte g6 = (byte)(rgb565 >>> 05 & 0b0011_1111); // keep lowest 6 bits
+        byte b5 = (byte)(rgb565 >>> 00 & 0b0001_1111); // keep lowest 5 bits
+        // Make 8 bit values from 5 or 6 bit values
+        // R_B: Lowest 3 bits are the highest of 5 bits
+        // _G_: Lowest 2 bits are the highest of 6 bits
+        byte r = (byte)(r5 << 3 | r5 >>> 2);
+        byte g = (byte)(g6 << 2 | b5 >>> 4);
+        byte b = (byte)(b5 << 3 | b5 >>> 2);
         var color = new TextureColor(r, g, b);
         return color;
     }
@@ -209,10 +215,10 @@ public struct TextureColor
     /// </returns>
     public static ushort ToRGB565(TextureColor c)
     {
-        byte r5 = (byte)((c.r >> 3) & 0b_0001_1111);
-        byte g6 = (byte)((c.g >> 2) & 0b_0011_1111);
-        byte b5 = (byte)((c.b >> 3) & 0b_0001_1111);
-        ushort rgb565 = (ushort)((r5 << 11) + (g6 << 05) + (b5 << 00));
+        byte r5 = (byte)(c.r >>> 3);
+        byte g6 = (byte)(c.g >>> 2);
+        byte b5 = (byte)(c.b >>> 3);
+        ushort rgb565 = (ushort)(r5 << 11 | g6 << 5 | b5 << 0);
         return rgb565;
     }
 
@@ -229,17 +235,42 @@ public struct TextureColor
         bool hasAlpha = (rgb5a3 & 0x8000) == 0;
         if (hasAlpha)
         {
-            a = (byte)(((rgb5a3 >> 12) & (0b_0000_0111)) / 07f * 255); // lower 3 of 4 bits
-            r = (byte)(((rgb5a3 >> 08) & (0b_0000_1111)) / 15f * 255); // 4 bits
-            g = (byte)(((rgb5a3 >> 04) & (0b_0000_1111)) / 15f * 255); // 4 bits
-            b = (byte)(((rgb5a3 >> 00) & (0b_0000_1111)) / 15f * 255); // 4 bits
+            // Old A value was wrong! The point of upper bit being off is to enbable alpha range!
+            //a = (byte)(((rgb5a3 >>> 12) & (0b_0000_0111)) / 07f * 255); // lower 3 of 4 bits
+            //r = (byte)(((rgb5a3 >>> 08) & (0b_0000_1111)) / 15f * 255); // 4 bits
+            //g = (byte)(((rgb5a3 >>> 04) & (0b_0000_1111)) / 15f * 255); // 4 bits
+            //b = (byte)(((rgb5a3 >>> 00) & (0b_0000_1111)) / 15f * 255); // 4 bits
+
+            // If has alpha, then color is treated as RGBA4 (16bit)
+            byte a4 = (byte)(rgb5a3 >>> 12 /***********/); // implicit truncation
+            byte r4 = (byte)(rgb5a3 >>> 08 & 0b0000_1111); // keep lowest 4 bits
+            byte g4 = (byte)(rgb5a3 >>> 04 & 0b0000_1111); // keep lowest 4 bits
+            byte b4 = (byte)(rgb5a3 >>> 00 & 0b0000_1111); // keep lowest 4 bits
+            // Make 8 bit values from 4 bit values
+            // Lowest 4 bits are the same 4 bits
+            a = (byte)(a4 << 4 | a4);
+            r = (byte)(r4 << 4 | r4);
+            g = (byte)(g4 << 4 | g4);
+            b = (byte)(b4 << 4 | b4);
         }
         else
         {
-            a = 0xFF;                                                  // alpha implied
-            r = (byte)(((rgb5a3 >> 10) & (0b_0001_1111)) / 31f * 255); // 5 bits
-            g = (byte)(((rgb5a3 >> 05) & (0b_0001_1111)) / 31f * 255); // 5 bits
-            b = (byte)(((rgb5a3 >> 00) & (0b_0001_1111)) / 31f * 255); // 5 bits
+            //a = 0xFF;                                                  // alpha implied
+            //r = (byte)(((rgb5a3 >> 10) & (0b_0001_1111)) / 31f * 255); // 5 bits
+            //g = (byte)(((rgb5a3 >> 05) & (0b_0001_1111)) / 31f * 255); // 5 bits
+            //b = (byte)(((rgb5a3 >> 00) & (0b_0001_1111)) / 31f * 255); // 5 bits
+
+            // If no alpha, trest as RGB5A1
+            //   a1 = (byte)(rgb5a3 >>> 15 & 0b0000_0001); // implied
+            byte r5 = (byte)(rgb5a3 >>> 10 & 0b0001_1111); // keep lowest 5 bits
+            byte g5 = (byte)(rgb5a3 >>> 05 & 0b0001_1111); // keep lowest 5 bits
+            byte b5 = (byte)(rgb5a3 >>> 00 & 0b0001_1111); // keep lowest 5 bits
+            // Make 8 bit values from 5 bit values
+            // Lowest 3 bits are the same 5 bits
+            r = (byte)(r5 << 3 | r5 >>> 2); // 
+            g = (byte)(g5 << 3 | g5 >>> 2); // 
+            b = (byte)(b5 << 3 | b5 >>> 2); // 
+            a = 0xFF; // alpha implied
         }
         var color = new TextureColor(r, g, b, a);
         return color;
@@ -256,33 +287,45 @@ public struct TextureColor
         byte r, g, b, a;
         ushort rgb5a3;
 
-        // If alpha is mostly opaque, consider it fully opaque so that
-        // we can use the format with more color depth.
-        bool isVeryOpaque = (c.a >> 4) > 0b_0000_0111;
-        if (isVeryOpaque)
+        // Since this stores 3-bit alpha, check to see if we are opaque
+        // This matches A of 224-255 (last 32 values, or 1/8 of range).
+        bool isOpaque = (c.a >>> 5) == 0b_0000_0111;
+        if (isOpaque)
         {
+            //const ushort opaque = 0x8000;
+            //r = (byte)((c.r >> 3) & 0b_0001_1111); // 5 bits
+            //g = (byte)((c.g >> 3) & 0b_0001_1111); // 5 bits
+            //b = (byte)((c.b >> 3) & 0b_0001_1111); // 5 bits
+            //rgb5a3 = (ushort)(opaque + (r << 10) + (g << 5) + (b << 0));
+
             // Opaque alpha 'a' is const 1 in bit position 15, 0x8000
             const ushort opaque = 0x8000;
-            r = (byte)((c.r >> 3) & 0b_0001_1111); // 5 bits
-            g = (byte)((c.g >> 3) & 0b_0001_1111); // 5 bits
-            b = (byte)((c.b >> 3) & 0b_0001_1111); // 5 bits
-            rgb5a3 = (ushort)(opaque + (r << 10) + (g << 5) + (b << 0));
+            r = (byte)(c.r >>> 3); // 5 bits
+            g = (byte)(c.g >>> 3); // 5 bits
+            b = (byte)(c.b >>> 3); // 5 bits
+            rgb5a3 = (ushort)(opaque | r << 10 | g << 5 | b << 0);
         }
         else
         {
-            a = (byte)((c.a >> 5) & 0b_0000_0111); // 3 bits
-            r = (byte)((c.r >> 4) & 0b_0000_1111); // 4 bits
-            g = (byte)((c.g >> 4) & 0b_0000_1111); // 4 bits
-            b = (byte)((c.b >> 4) & 0b_0000_1111); // 4 bits
-            rgb5a3 = (ushort)((a << 12) + (r << 8) + (g << 4) + (b << 0));
+            //a = (byte)((c.a >> 5) & 0b_0000_0111); // 3 bits
+            //r = (byte)((c.r >> 4) & 0b_0000_1111); // 4 bits
+            //g = (byte)((c.g >> 4) & 0b_0000_1111); // 4 bits
+            //b = (byte)((c.b >> 4) & 0b_0000_1111); // 4 bits
+            //rgb5a3 = (ushort)((a << 12) + (r << 8) + (g << 4) + (b << 0));
+
+            a = (byte)(c.a >>> 5); // 3 bits stored in top 4 bits, bit 15 CANNOT be 1!
+            r = (byte)(c.r >>> 4); // 4 bits
+            g = (byte)(c.g >>> 4); // 4 bits
+            b = (byte)(c.b >>> 4); // 4 bits
+            rgb5a3 = (ushort)(a << 12 | r << 8 | g << 4 | b << 0);
         }
         return rgb5a3;
     }
 
 
-    public static readonly TextureColor Clear = new TextureColor(0, 0);
+    public static readonly TextureColor Clear = new(0, 0);
 
-    public override string ToString()
+    public readonly override string ToString()
     {
         return $"{nameof(TextureColor)}(R:{r:x2}, G:{g:x2}, B:{b:x2}, A:{a:x2})";
     }

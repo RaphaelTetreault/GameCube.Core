@@ -116,10 +116,10 @@ public struct GXColor :
     // METHODS
     private void GetRGBA8(uint raw)
     {
-        R = (byte)(raw >> 24);
-        G = (byte)(raw >> 16);
-        B = (byte)(raw >> 08);
-        A = (byte)(raw >> 00);
+        R = (byte)(raw >>> 24);
+        G = (byte)(raw >>> 16);
+        B = (byte)(raw >>> 08);
+        A = (byte)(raw >>> 00);
         //R = (byte)((raw >> 24) & 0b11111111);
         //G = (byte)((raw >> 16) & 0b11111111);
         //B = (byte)((raw >> 08) & 0b11111111);
@@ -129,12 +129,16 @@ public struct GXColor :
     private void ReadRGBA565(EndianBinaryReader reader)
     {
         ushort rgb565 = reader.ReadUInt16();
-        // First shift >>> to get only relevant bits
-        // Second shift << to get value into 8 bit range
-        // Third shift >>> to approximate value more closely
-        R = (byte)(((rgb565 >>> 11) << 3) + (rgb565 >>> 13)); // 13 = keep 3 bits
-        G = (byte)(((rgb565 >>> 05) << 2) + (rgb565 >>> 14)); // 14 = keep 2 bits
-        B = (byte)(((rgb565 >>> 00) << 3) + (rgb565 >>> 13)); // 13 = keep 3 bits
+
+        byte r5 = (byte)(rgb565 >>> 11 /***********/); // implicit truncation
+        byte g6 = (byte)(rgb565 >>> 05 & 0b0011_1111); // keep lowest 6 bits
+        byte b5 = (byte)(rgb565 >>> 00 & 0b0001_1111); // keep lowest 5 bits
+        // Make 8 bit values from 5 or 6 bit values
+        // R_B: Lowest 3 bits are the highest of 5 bits
+        // _G_: Lowest 2 bits are the highest of 6 bits
+        R = (byte)(r5 << 3 | r5 >>> 2);
+        G = (byte)(g6 << 2 | b5 >>> 4);
+        B = (byte)(b5 << 3 | b5 >>> 2);
         //R = (byte)(((rgb565 >> 11) & (0b_0001_1111)) * (1 << 3));
         //G = (byte)(((rgb565 >> 05) & (0b_0011_1111)) * (1 << 2));
         //B = (byte)(((rgb565 >> 00) & (0b_0001_1111)) * (1 << 3));
@@ -156,13 +160,16 @@ public struct GXColor :
     private void ReadRGBA4(EndianBinaryReader reader)
     {
         ushort rgba4 = reader.ReadUInt16();
-        // First shift >>> to get only relevant bits
-        // Second shift << to get value into 8 bit range
-        // Third shift >>> to approximate value more closely
-        R = (byte)(((rgba4 >>> 12) << 4) + (rgba4 >>> 12));
-        G = (byte)(((rgba4 >>> 08) << 4) + (rgba4 >>> 08));
-        B = (byte)(((rgba4 >>> 04) << 4) + (rgba4 >>> 04));
-        A = (byte)(((rgba4 >>> 00) << 4) + (rgba4 >>> 00));
+        byte r4 = (byte)(rgba4 >>> 12 /***********/); // implicit truncation
+        byte g4 = (byte)(rgba4 >>> 08 & 0b0000_1111); // keep lowest 4 bits
+        byte b4 = (byte)(rgba4 >>> 04 & 0b0000_1111); // keep lowest 4 bits
+        byte a4 = (byte)(rgba4 >>> 00 & 0b0000_1111); // keep lowest 4 bits
+        // Make 8 bit values from 4 bit values
+        // Lowest 4 bits are the same 4 bits
+        R = (byte)(r4 << 4 | r4);
+        G = (byte)(g4 << 4 | g4);
+        B = (byte)(b4 << 4 | b4);
+        A = (byte)(a4 << 4 | a4);
         //R = (byte)(((rgba4 >> 12) & (0b_0000_1111)) * (1 << 4));
         //G = (byte)(((rgba4 >> 08) & (0b_0000_1111)) * (1 << 4));
         //B = (byte)(((rgba4 >> 04) & (0b_0000_1111)) * (1 << 4));
@@ -172,13 +179,17 @@ public struct GXColor :
     private void ReadRGBA6(EndianBinaryReader reader)
     {
         uint rgba6 = Read3BytesCorrectEndianness(reader);
-        // First shift >>> to get only relevant bits
-        // Second shift << to get value into 8 bit range
-        // Third shift >>> to approximate value more closely
-        R = (byte)(((rgba6 >> 18) << 2) + (rgba6 >>> 18));
-        G = (byte)(((rgba6 >> 12) << 2) + (rgba6 >>> 12));
-        B = (byte)(((rgba6 >> 06) << 2) + (rgba6 >>> 06));
-        A = (byte)(((rgba6 >> 00) << 2) + (rgba6 >>> 00));
+        // Get individual values, 6 bits each
+        byte r6 = (byte)(rgba6 >>> 18 & 0b0011_1111); // keep lowest 6 bits
+        byte g6 = (byte)(rgba6 >>> 12 & 0b0011_1111); // keep lowest 6 bits
+        byte b6 = (byte)(rgba6 >>> 06 & 0b0011_1111); // keep lowest 6 bits
+        byte a6 = (byte)(rgba6 >>> 00 & 0b0011_1111); // keep lowest 6 bits
+        // Make 8 bit values from 6 bit values
+        // Lowest 2 bits are the highest of 6 bits
+        R = (byte)(r6 << 2 | r6 >>> 4);
+        G = (byte)(g6 << 2 | g6 >>> 4);
+        B = (byte)(b6 << 2 | b6 >>> 4);
+        A = (byte)(a6 << 2 | a6 >>> 4);
         //R = (byte)(((rgba6 >> 18) & (0b_0011_1111)) * (1 << 2));
         //G = (byte)(((rgba6 >> 12) & (0b_0011_1111)) * (1 << 2));
         //B = (byte)(((rgba6 >> 06) & (0b_0011_1111)) * (1 << 2));
@@ -199,25 +210,36 @@ public struct GXColor :
 
     private static uint Read3BytesCorrectEndianness(EndianBinaryReader reader)
     {
-        // Reconstruct the 24bit color as uint32
-        var bytes = reader.ReadBytes(3);
-        if (reader.IsLittleEndian ^ BitConverter.IsLittleEndian)
-            Array.Reverse(bytes);
-        uint color32 = BitConverter.ToUInt32(bytes);
-        uint color24 = color32 & 0x00FFFFFF; // only 3 bytes
+        //// Reconstruct the 24bit color as uint32
+        //byte[] bytes = reader.ReadBytes(3);
+        //if (reader.IsLittleEndian ^ BitConverter.IsLittleEndian)
+        //    Array.Reverse(bytes);
+        //uint color32 = BitConverter.ToUInt32(bytes);
+        //uint color24 = color32 & 0x00FFFFFF; // only 3 bytes
+
+        // TODO: Validate ordering, check endianess. I assume GX is fixed endianness?
+        throw new NotImplementedException();
+#pragma warning disable CS0162 // Unreachable code detected
+        // I'm assuming order is always RGB regardless of endianness
+        byte[] bytes = reader.ReadBytes(3);
+        uint color24 = (byte)(bytes[0] << 16 | bytes[1] << 8 | bytes[2] << 0);
         return color24;
+#pragma warning restore CS0162 // Unreachable code detected
     }
 
     private static void Write3BytesCorrectEndianness(EndianBinaryWriter writer, uint color24)
     {
-        var bytes32 = BitConverter.GetBytes(color24);
-        var bytes24 = new byte[3];
-        bytes32.CopyTo(bytes24, 1);
+        // TODO: Validate ordering, check endianess. I assume GX is fixed endianness?
+        throw new NotImplementedException();
 
-        if (writer.IsLittleEndian ^ BitConverter.IsLittleEndian)
-            Array.Reverse(bytes24);
+        //var bytes32 = BitConverter.GetBytes(color24);
+        //var bytes24 = new byte[3];
+        //bytes32.CopyTo(bytes24, 1);
 
-        writer.Write(bytes24);
+        //if (writer.IsLittleEndian ^ BitConverter.IsLittleEndian)
+        //    Array.Reverse(bytes24);
+
+        //writer.Write(bytes24);
     }
 
     private readonly void WriteRGBA565(EndianBinaryWriter writer)
@@ -228,7 +250,7 @@ public struct GXColor :
         byte r5 = (byte)(R >>> 3);
         byte g6 = (byte)(G >>> 2);
         byte b5 = (byte)(B >>> 3);
-        ushort rgb565 = (ushort)(r5 << 11 + g6 << 05 + b5 << 00);
+        ushort rgb565 = (ushort)(r5 << 11 | g6 << 5 | b5 << 0);
         writer.Write(rgb565);
     }
 
@@ -248,21 +270,22 @@ public struct GXColor :
         byte g4 = (byte)(G >>> 4);
         byte b4 = (byte)(B >>> 4);
         byte a4 = (byte)(A >>> 4);
-        ushort rgba4 = (ushort)(r4 << 12 + g4 << 08 + b4 << 04 + a4 << 00);
+        ushort rgba4 = (ushort)(r4 << 12 | g4 << 8 | b4 << 4 | a4 << 0);
         writer.Write(rgba4);
     }
 
     private readonly void WriteRGBA6(EndianBinaryWriter writer)
     {
+        // WRONG SHIFT COUNT!!!
         //byte r6 = (byte)((R >> 6) & 0b_0011_1111);
         //byte g6 = (byte)((G >> 6) & 0b_0011_1111);
         //byte b6 = (byte)((B >> 6) & 0b_0011_1111);
         //byte a6 = (byte)((A >> 6) & 0b_0011_1111);
-        byte r6 = (byte)(R >>> 6);
-        byte g6 = (byte)(G >>> 6);
-        byte b6 = (byte)(B >>> 6);
-        byte a6 = (byte)(A >>> 6);
-        uint rgba6 = (uint)(r6 << 18 + g6 << 12 + b6 << 06 + a6 << 00);
+        byte r6 = (byte)(R >>> 2);
+        byte g6 = (byte)(G >>> 2);
+        byte b6 = (byte)(B >>> 2);
+        byte a6 = (byte)(A >>> 2);
+        uint rgba6 = (uint)(r6 << 18 | g6 << 12 | b6 << 6 | a6 << 0);
         Write3BytesCorrectEndianness(writer, rgba6);
     }
 
@@ -276,8 +299,9 @@ public struct GXColor :
     {
         // Write color with fixed alpha
         uint raw = GetRGBA8();
-        // Color is: raw & mask alpha + fixed alpha
-        uint color = raw & 0xFFFFFF00 + 0x000000FF;
+        // Color is: raw & mask alpha | fixed alpha
+        // Color is: raw &   RRGGBB-- |   ------AA
+        uint color = raw & 0xFFFFFF00 | 0x000000FF;
         writer.Write(color);
     }
 
@@ -289,7 +313,7 @@ public struct GXColor :
 
     private readonly uint GetRGBA8()
     {
-        uint value = (uint)((R << 24) | (G << 16) | (B << 08) | (A << 00)); ;
+        uint value = (uint)(R << 24 | G << 16 | B << 8 | A << 0);
         return value;
     }
 
