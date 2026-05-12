@@ -3,8 +3,28 @@
 /// <summary>
 ///     A colour block which is directly encoded using a pixel format.
 /// </summary>
-public sealed class DirectBlock : Block
+public record struct DirectBlock
 {
+    /// <summary>
+    ///     The block's width.
+    /// </summary>
+    public readonly byte Width;
+
+    /// <summary>
+    ///     The block's height.
+    /// </summary>
+    public readonly byte Height;
+
+    /// <summary>
+    ///     The block's texture format.
+    /// </summary>
+    public readonly DirectTextureFormat DirectFormat;
+
+    /// <summary>
+    ///     
+    /// </summary>
+    public readonly DirectEncoding DirectEncoding;
+
     /// <summary>
     ///     This block's direct colours (pixels).
     /// </summary>
@@ -17,7 +37,11 @@ public sealed class DirectBlock : Block
     /// <returns>
     ///     Direct colour (pixel) at the specified index within this block.
     /// </returns>
-    public TextureColor this[int i] { get => Colors[i]; set => Colors[i] = value; }
+    public TextureColor this[int i] 
+    { 
+        get => Colors[i];
+        set => Colors[i] = value; 
+    }
 
     /// <summary>
     ///     Indexer to get/set direct colour (pixel).
@@ -51,38 +75,23 @@ public sealed class DirectBlock : Block
     /// <exception cref="System.ArgumentException">
     ///     Thrown if the <paramref name="directFormat"/> is not a direct colour format.
     /// </exception>
-    public DirectBlock(byte width, byte height, TextureFormat directFormat) : base(width, height, directFormat)
+    public DirectBlock(byte width, byte height, DirectTextureFormat directFormat)
     {
+        directFormat.Validate();
+
+        Width = width;
+        Height = height;
+        DirectFormat = directFormat;
+
         int pixelCount = Width * Height;
         Colors = new TextureColor[pixelCount];
-
-        switch (directFormat)
-        {
-            // Valid direct colour formats
-            case TextureFormat.CMPR:
-            case TextureFormat.I4:
-            case TextureFormat.I8:
-            case TextureFormat.IA4:
-            case TextureFormat.IA8:
-            case TextureFormat.RGB565:
-            case TextureFormat.RGB5A3:
-            case TextureFormat.RGBA8:
-                break;
-
-            // Everything else is invalid
-            default:
-                string msg =
-                    $"Invalid {nameof(TextureFormat)} '{directFormat}'. " +
-                    $"The format must be a direct colour format.";
-                throw new System.ArgumentException(msg);
-        }
     }
 
     /// <summary>
     ///     Construct a new direct colour block.
     /// </summary>
     /// <param name="directEncoding">The direct encoding to use for this block.</param>
-    public DirectBlock(DirectEncoding directEncoding) : this(directEncoding.BlockWidth, directEncoding.BlockHeight, directEncoding.Format)
+    public DirectBlock(DirectEncoding directEncoding) : this(directEncoding.BlockWidth, directEncoding.BlockHeight, directEncoding.DirectFormat)
     { }
 
 }
