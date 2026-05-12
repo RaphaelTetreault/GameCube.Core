@@ -18,7 +18,7 @@ public sealed class TextureEncodingCMPR : DirectEncoding
     public override byte BlockHeight => 8;
     public override byte BitsPerColor => 4;
     public override TextureFormat Format => TextureFormat.CMPR;
-    private BcEncoder BC1Encoder => new BcEncoder();
+    private static BcEncoder BC1Encoder => new();
 
     public TextureEncodingCMPR(CompressionQuality quality = CompressionQuality.Balanced) : base()
     {
@@ -114,39 +114,6 @@ public sealed class TextureEncodingCMPR : DirectEncoding
         }
     }
 
-    public void OldWriteBlock(EndianBinaryWriter writer, Block block)
-    {
-        var colorBlock = block as DirectBlock;
-
-        // CMPR 8x8 is split into 2x2 quadrants of 4x4 pixels
-        for (int qy = 0; qy < 2; qy++)
-        {
-            for (int qx = 0; qx < 2; qx++)
-            {
-                // Get colors
-                var colors4x4 = new TextureColor[4 * 4];
-                // The following math gets the first pixel index for the quadrant.
-                int quadrantBaseIndex = qx * 4 + qy * 32;
-                for (int y = 0; y < 4; y++)
-                {
-                    for (int x = 0; x < 4; x++)
-                    {
-                        int blockIndex4x4 = x + (y * 4); // 4x4
-                        int blockIndex8x8 = x + (y * 8) + quadrantBaseIndex; // true 8x8 index
-                        colors4x4[blockIndex4x4] = colorBlock.Colors[blockIndex8x8];
-                    }
-                }
-
-                // Get color palette and indexes from compressor
-                GetCmprColorAndIndexes(colors4x4, out ushort c0, out ushort c1, out uint indexesPacked);
-                // write DXT1 block
-                writer.Write(c0);
-                writer.Write(c1);
-                writer.Write(indexesPacked);
-            }
-        }
-    }
-
     /// <summary>
     ///     Reconstruct a CMPR block's palette based on the 2 color endpoints <paramref name="c0"/>
     ///     and <paramref name="c1"/>.
@@ -172,19 +139,6 @@ public sealed class TextureEncodingCMPR : DirectEncoding
             colors[3] = new TextureColor(0x00000000);
         }
         return colors;
-    }
-
-    /// <summary>
-    ///     Get CMPR compressed colors and indexes.
-    /// </summary>
-    /// <param name="colors4x4"></param>
-    /// <param name="c0">Color 0 of CMPR palette.</param>
-    /// <param name="c1">Color 1 of CMPR palette.</param>
-    /// <param name="indexesPacked">Packed CMPR color indexes.</param>
-    public static void GetCmprColorAndIndexes(TextureColor[] colors4x4, out ushort c0, out ushort c1, out uint indexesPacked)
-    {
-        // For now use naive range-fit for CMPR
-        DXT1.MinMaxFitColors(colors4x4, out c0, out c1, out indexesPacked);
     }
 
     /// <summary>
@@ -237,7 +191,7 @@ public sealed class TextureEncodingCMPR : DirectEncoding
         return packedIndexes;
     }
 
-    public TextureColor[] Get4x4SubBlockColors(TextureColor[] colors, int qx, int qy)
+    public static TextureColor[] Get4x4SubBlockColors(TextureColor[] colors, int qx, int qy)
     {
         // DXT1 sub-block is 4x4 inside the larger 8x8
         TextureColor[] subBlock = new TextureColor[16];
