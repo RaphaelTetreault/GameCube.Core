@@ -6,6 +6,8 @@
 // https://en.wikipedia.org/wiki/Floyd%E2%80%93Steinberg_dithering
 // https://tannerhelland.com/2012/12/28/dithering-eleven-algorithms-source-code.html
 
+// TODO: Implement palettes of all other direct color formats.
+
 using Manifold.IO;
 using System;
 using SixLabors.ImageSharp.PixelFormats;
@@ -15,32 +17,44 @@ namespace GameCube.GX.Texture;
 /// <summary>
 ///     The base representation for a GameCube indexed-colour palette.
 /// </summary>
-public abstract class Palette
+public class Palette
 {
+    public delegate Palette ReadPalette(EndianBinaryReader reader, IndirectEncoding indirectEncoding);
+    public delegate void WritePalette(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette);
+
     /// <summary>
     ///     The texture format used by this palette.
     /// </summary>
-    public abstract TextureFormat ColorFormat { get; }
+    public DirectEncoding DirectEncoding { get; init; }
 
     /// <summary>
     ///     The colours used by this palette.
     /// </summary>
-    public TextureColor[] Colors { get; set; } = Array.Empty<TextureColor>();
+    public TextureColor[] Colors { get; set; }
+
+    public ReadPalette Read { get; init; }
+
+    public WritePalette Write { get; init; }
 
 
-    /// <summary>
-    ///     Read a palette using the specified <paramref name="indirectEncoding"/> encoding.
-    /// </summary>
-    /// <param name="reader">The stream to read the palette from.</param>
-    /// <param name="indirectEncoding">The indirect encoding format used to deserialize the target palette.</param>
-    public abstract void ReadPalette(EndianBinaryReader reader, IndirectEncoding indirectEncoding);
+    public Palette(DirectEncoding directEncoding, TextureColor[] paletteColors)
+    {
+        // Validate and assign encoding
+        directEncoding.Format.Validate();
+        DirectEncoding = directEncoding;
 
-    /// <summary>
-    ///     Write a palette using the specified <paramref name="indirectEncoding"/> encoding.
-    /// </summary>
-    /// <param name="writer">The stream to write the palette to.</param>
-    /// <param name="indirectEncoding">The indirect encoding to use (limits number of indexes).</param>
-    public abstract void WritePalette(EndianBinaryWriter writer, IndirectEncoding indirectEncoding);
+        //// Make sure pixels map to encoding
+        //if (paletteColors.Length != directEncoding.PixelsPerBlock)
+        //{
+        //    //string msg = $"{nameof(Palette)} encoding of {directEncoding.DirectFormat} defines " +
+        //    //    $"{paletteColors.PixelsPerBlock} pixels but an array of {paletteColors.Length} " +
+        //    //    $"{nameof(TextureColor)} was passed to be assigned.";
+        //    string msg = $"";
+        //    throw new System.ArgumentException(msg);
+        //}
+        Colors = paletteColors;
+    }
+
 
     /// <summary>
     ///     Set the palette's colors to <paramref name="colors"/>.
@@ -58,39 +72,90 @@ public abstract class Palette
         }
     }
 
-
-
-    /// <summary>
-    ///     Create new palette instance for the provided <paramref name="textureFormat"/> format.
-    /// </summary>
-    /// <param name="textureFormat">The texture format of the block.</param>
-    /// <returns>
-    ///     A texture palette of the specified texture format.
-    /// </returns>
-    /// <exception cref="System.ArgumentException">
-    ///     Thrown if the <paramref name="textureFormat"/> is not supported by the GameCube hardware
-    ///     for use as a colour-indexed palette.
-    /// </exception>
-    public static Palette CreatePalette(TextureFormat textureFormat)
+    internal static void AssertPalette(Palette palette, IndirectEncoding indirectEncoding)
     {
-        switch (textureFormat)
+        if (palette.Colors.Length != indirectEncoding.MaxPaletteSize)
         {
-            case TextureFormat.IA8: return new PaletteIA8();
-            case TextureFormat.RGB565: return new PaletteRGB565();
-            case TextureFormat.RGB5A3: return new PaletteRGB5A3();
-            default:
-                throw new System.ArgumentException($"No palette defined for texture format {textureFormat}.");
+            string msg = $"";
+            throw new ArgumentException(msg);
         }
     }
 
-    public void ReadPaletteColors(EndianBinaryReader reader, TextureFormat indirectFormat)
+    internal static Palette ReadIA8(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
     {
-        IndirectEncoding indirectEncoding = IndirectEncoding.GetEncoding(indirectFormat);
-        ReadPalette(reader, indirectEncoding);
+        TextureColor[] colors = new TextureColor[indirectEncoding.MaxPaletteSize];
+        for (int i = 0; i < colors.Length; i++)
+        {
+            ushort ia8 = reader.ReadUInt16();
+            colors[i] = TextureColor.FromIA8(ia8);
+        }
+        Palette palette = new(DirectEncodingDB.IA8, colors);
+        return palette;
     }
-    public void WritePalette(EndianBinaryWriter writer, TextureFormat indirectFormat)
+
+    internal static void WriteIA8(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
     {
-        IndirectEncoding indirectEncoding = IndirectEncoding.GetEncoding(indirectFormat);
-        WritePalette(writer, indirectEncoding);
+        AssertPalette(palette, indirectEncoding);
+        for (int i = 0; i < palette.Colors.Length; i++)
+        {
+            ushort ia8 = TextureColor.ToIA8(palette.Colors[i]);
+            writer.Write(ia8);
+        }
     }
+
+    internal static Palette ReadRGB565(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
+    {
+        TextureColor[] colors = new TextureColor[indirectEncoding.MaxPaletteSize];
+        for (int i = 0; i < colors.Length; i++)
+        {
+            ushort rgb565 = reader.ReadUInt16();
+            colors[i] = TextureColor.FromRGB565(rgb565);
+        }
+        Palette palette = new(DirectEncodingDB.RGB565, colors);
+        return palette;
+    }
+
+    internal static void WriteRGB565(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
+    {
+        AssertPalette(palette, indirectEncoding);
+        for (int i = 0; i < palette.Colors.Length; i++)
+        {
+            ushort rgb565 = TextureColor.ToRGB565(palette.Colors[i]);
+            writer.Write(rgb565);
+        }
+    }
+
+    internal static Palette ReadRGB5A3(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
+    {
+        TextureColor[] colors = new TextureColor[indirectEncoding.MaxPaletteSize];
+        for (int i = 0; i < colors.Length; i++)
+        {
+            ushort rgb5a3 = reader.ReadUInt16();
+            colors[i] = TextureColor.FromRGB5A3(rgb5a3);
+        }
+        Palette palette = new(DirectEncodingDB.RGB5A3, colors);
+        return palette;
+    }
+
+    internal static void WriteRGB5A3(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
+    {
+        AssertPalette(palette, indirectEncoding);
+        for (int i = 0; i < palette.Colors.Length; i++)
+        {
+            ushort rgb5a3 = TextureColor.ToRGB5A3(palette.Colors[i]);
+            writer.Write(rgb5a3);
+        }
+    }
+
+}
+
+public static class PaletteDB
+{
+    //public static readonly Palette PaletteIA8 = new()
+    //{
+    //    DirectEncoding = DirectEncodingDB.IA8,
+    //    Read = Palette.ReadIA8,
+    //    Write = Palette.WriteIA8,
+    //};
+
 }

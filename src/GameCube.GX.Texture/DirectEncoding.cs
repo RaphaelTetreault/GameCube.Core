@@ -72,22 +72,12 @@ public record class DirectEncoding
     /// <summary>
     ///     Get <see cref="DirectFormat"/> as <see cref="TextureFormat"/>.
     /// </summary>
-    public readonly TextureFormat Format;
+    public TextureFormat Format => (TextureFormat)DirectFormat;
 
     /// <summary>
     ///     The pixel width of a block for this encoding.
     /// </summary>
-    public readonly int PixelsPerBlock;
-
-
-    public DirectEncoding()
-    {
-        // Assign readonly values once
-        Format = (TextureFormat)DirectFormat;
-        PixelsPerBlock = Width * Height;
-        // Asserts
-        Format.Validate();
-    }
+    public int PixelsPerBlock => Width * Height;
 
 
     internal static void AssertEncoding(DirectEncoding expected, DirectEncoding value)
@@ -115,7 +105,7 @@ public record class DirectEncoding
                 int indexNybbleHigh = x + (y * DirectEncoding.Width);
                 int indexNybbleLow = indexNybbleHigh + 1;
                 // TODO: move to TextureColor
-                byte intensityHi4 = (byte)(nybbles >>> 4 & 0b_0000_1111);
+                byte intensityHi4 = (byte)(nybbles >>> 4   /*implicit*/); // & 0b_0000_1111
                 byte intensityLo4 = (byte)(nybbles >>> 0 & 0b_0000_1111);
                 byte intensityHi = (byte)(intensityHi4 << 4 | intensityHi4);
                 byte intensityLo = (byte)(intensityLo4 << 4 | intensityLo4);

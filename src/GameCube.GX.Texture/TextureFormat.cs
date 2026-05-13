@@ -75,7 +75,7 @@ public static class TextureFormatExtensions
             directTextureFormat.Validate();
             return directTextureFormat;
         }
-        public IndirectTextureFormat AsDirectTextureFormat()
+        public IndirectTextureFormat AsIndirectTextureFormat()
         {
             IndirectTextureFormat indirectTextureFormat = (IndirectTextureFormat)textureFormat;
             indirectTextureFormat.Validate();
@@ -120,7 +120,7 @@ public static class DirectTextureFormatExtensions
                 // Everything else is invalid
                 default:
                     string msg =
-                        $"Invalid {nameof(DirectTextureFormat)} '{DirectTextureFormat}'. " +
+                        $"Invalid {nameof(DirectTextureFormat)} '{directTextureFormat}'. " +
                         $"The format must be a direct colour format.";
                     throw new System.ArgumentException(msg);
             }
