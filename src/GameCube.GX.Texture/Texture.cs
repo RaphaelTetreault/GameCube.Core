@@ -136,7 +136,7 @@ public class Texture
         {
             blocks[blockIndex] = RegionToDirectBlock(texture, directEncoding, textureOriginX, textureOriginY);
         };
-        LoopTextureIndexToBlockIndex(blocksCountHorizontal, blocksCountVertical, directEncoding.BlockWidth, directEncoding.BlockHeight, colorsToBlock);
+        LoopTextureIndexToBlockIndex(blocksCountHorizontal, blocksCountVertical, directEncoding.Width, directEncoding.Height, colorsToBlock);
 
         return blocks;
     }
@@ -204,8 +204,8 @@ public class Texture
         var block = new DirectBlock(directEncoding);
 
         // Figure out how many pixels to copy over. On smaller textures (eg: 4x2), outside region is black.
-        int nPixelsX = Math.Min(directEncoding.BlockWidth, sourceTexture.Width - originX);
-        int nPixelsY = Math.Min(directEncoding.BlockHeight, sourceTexture.Height - originY);
+        int nPixelsX = Math.Min(directEncoding.Width, sourceTexture.Width - originX);
+        int nPixelsY = Math.Min(directEncoding.Height, sourceTexture.Height - originY);
 
         // Copy texture region into block
         for (int y = 0; y < nPixelsY; y++)
@@ -591,8 +591,8 @@ public class Texture
     public static Texture ReadDirectColorTexture(EndianBinaryReader reader, TextureFormat directFormat, int pxWidth, int pxHeight)
     {
         DirectEncoding encoding = DirectEncoding.GetEncoding(directFormat);
-        int blocksWidth = (int)MathF.Ceiling(pxWidth / encoding.BlockWidth);
-        int blocksHeight = (int)MathF.Ceiling(pxHeight / encoding.BlockHeight);
+        int blocksWidth = (int)MathF.Ceiling(pxWidth / encoding.Width);
+        int blocksHeight = (int)MathF.Ceiling(pxHeight / encoding.Height);
         int blocksCount = blocksWidth * blocksHeight;
         DirectBlock[] directBlocks = encoding.ReadBlocks<DirectBlock>(reader, encoding, blocksCount);
         Texture texture = FromDirectBlocks(directBlocks, blocksWidth, blocksHeight);

@@ -3,32 +3,17 @@
 /// <summary>
 ///     A colour block which is directly encoded using a pixel format.
 /// </summary>
-public record struct DirectBlock
+public record class DirectBlock
 {
     /// <summary>
-    ///     The block's width.
-    /// </summary>
-    public readonly byte Width;
-
-    /// <summary>
-    ///     The block's height.
-    /// </summary>
-    public readonly byte Height;
-
-    /// <summary>
-    ///     The block's texture format.
-    /// </summary>
-    public readonly DirectTextureFormat DirectFormat;
-
-    /// <summary>
-    ///     
+    ///     The block's encoding.
     /// </summary>
     public readonly DirectEncoding DirectEncoding;
 
     /// <summary>
     ///     This block's direct colours (pixels).
     /// </summary>
-    public TextureColor[] Colors { get; set; }
+    public readonly TextureColor[] Colors;
 
     /// <summary>
     ///     Indexer to get/set direct colour (pixel).
@@ -55,13 +40,13 @@ public record struct DirectBlock
     { 
         get
         {
-            int index = x + y * Width;
+            int index = x + y * DirectEncoding.Width;
             TextureColor color = Colors[index];
             return color;
         }
         set
         {
-            int index = x + y * Width;
+            int index = x + y * DirectEncoding.Width;
             Colors[index] = value;
         }
     }
@@ -69,29 +54,21 @@ public record struct DirectBlock
     /// <summary>
     ///     Construct a new direct colour block.
     /// </summary>
-    /// <param name="width">The width of the block.</param>
-    /// <param name="height">The height of the block.</param>
-    /// <param name="directFormat">The texture format of the block.</param>
-    /// <exception cref="System.ArgumentException">
-    ///     Thrown if the <paramref name="directFormat"/> is not a direct colour format.
-    /// </exception>
-    public DirectBlock(byte width, byte height, DirectTextureFormat directFormat)
-    {
-        directFormat.Validate();
-
-        Width = width;
-        Height = height;
-        DirectFormat = directFormat;
-
-        int pixelCount = Width * Height;
-        Colors = new TextureColor[pixelCount];
-    }
-
-    /// <summary>
-    ///     Construct a new direct colour block.
-    /// </summary>
     /// <param name="directEncoding">The direct encoding to use for this block.</param>
-    public DirectBlock(DirectEncoding directEncoding) : this(directEncoding.BlockWidth, directEncoding.BlockHeight, directEncoding.DirectFormat)
-    { }
+    public DirectBlock(DirectEncoding directEncoding, TextureColor[] pixels)
+    {
+        // Validate and assign encoding
+        directEncoding.DirectFormat.Validate();
+        DirectEncoding = directEncoding;
 
+        // Make sure pixels map to encoding
+        if (pixels.Length != directEncoding.PixelsPerBlock)
+        {
+            string msg = $"{nameof(DirectBlock)} encoding of {directEncoding.DirectFormat} " +
+                $"defines {directEncoding.PixelsPerBlock} pixels but an array of {pixels.Length} " +
+                $"{nameof(TextureColor)} was passed to be assigned.";
+            throw new System.ArgumentException(msg);
+        }
+        Colors = pixels;
+    }
 }
