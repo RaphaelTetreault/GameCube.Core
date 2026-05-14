@@ -653,4 +653,36 @@ public class Texture
         byte[] rawData = memoryStream.ToArray();
         return rawData;
     }
+
+
+
+
+
+
+
+
+
+
+
+    // NEW STUFF
+
+    public static IndirectBlock[] QuantizeTexture(Texture texture, PaletteColorFormat colorFormat, IndirectEncoding indirectEncoding)
+    {
+        // TODO: quantize texture 
+        TextureColor[] paletteColors = [];
+        ushort[] textureIndexes = [];
+
+        // Create palettes from quantized data
+        Palette palette = new(colorFormat, indirectEncoding, paletteColors);
+
+        // TODO: loop over texture, extracting the appropriate strides
+        // for x,y
+        IndirectBlock indirectBlock = new(indirectEncoding, palette)
+        {
+            ColorIndexes = [],
+        };
+
+        // then return array of indirect blocks
+        throw new NotImplementedException();
+    }
 }

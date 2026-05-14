@@ -41,7 +41,7 @@ public record class IndirectEncoding
     /// <summary>
     ///     
     /// </summary>
-    public ushort MaxPaletteIndex => (ushort)(MaxPaletteSize - 1);
+    //public ushort MaxPaletteIndex => (ushort)(MaxPaletteSize - 1);
 
     public int IndexesPerBlock => BlockWidth * BlockHeight;
 
@@ -57,7 +57,18 @@ public record class IndirectEncoding
         }
     }
 
-    internal static IndirectBlock ReadCI4(EndianBinaryReader reader)
+    internal static void AssertCI14X2Index(ushort index)
+    {
+        // Make sure index is 14 bits at most
+        bool indexTooLarge = index >= IndirectEncodingDB.CI14X2.MaxPaletteSize;
+        if (indexTooLarge)
+        {
+            string msg = $"Specified index '{index}' is greater than 14 bits.";
+            throw new IndexOutOfRangeException(msg);
+        }
+    }
+
+    internal static IndirectBlock ReadCI4(EndianBinaryReader reader, Palette palette)
     {
         IndirectEncoding indirectEncoding = IndirectEncodingDB.CI8;
         ushort[] indexes = new ushort[indirectEncoding.IndexesPerBlock];
@@ -65,12 +76,12 @@ public record class IndirectEncoding
         for (int i = 0; i < indexes.Length; i += 2)
         {
             byte indexes01 = reader.ReadByte();
-            byte index0 = (byte)((indexes01 >> 4) & 0b_0000_1111);
-            byte index1 = (byte)((indexes01 >> 0) & 0b_0000_1111);
+            byte index0 = (byte)(indexes01 >>> 4 & 0b_0000_1111);
+            byte index1 = (byte)(indexes01 >>> 0 & 0b_0000_1111);
             indexes[i + 0] = index0;
             indexes[i + 1] = index1;
         }
-        IndirectBlock indirectBlock = new(indirectEncoding);
+        IndirectBlock indirectBlock = new(indirectEncoding, palette);
         return indirectBlock;
     }
 
@@ -81,14 +92,14 @@ public record class IndirectEncoding
         // Process 2 indexes at a time
         for (int i = 0; i < indirectBlock.ColorIndexes.Length; i += 2)
         {
-            byte index0 = checked((byte)(i));
+            byte index0 = checked((byte)i);
             byte index1 = checked((byte)(index0 + 1));
             byte indexes01 = (byte)(index0 << 4 + index1 << 0);
             writer.Write(indexes01);
         }
     }
 
-    internal static IndirectBlock ReadCI8(EndianBinaryReader reader)
+    internal static IndirectBlock ReadCI8(EndianBinaryReader reader, Palette palette)
     {
         IndirectEncoding indirectEncoding = IndirectEncodingDB.CI4;
         ushort[] indexes = new ushort[indirectEncoding.IndexesPerBlock];
@@ -96,7 +107,7 @@ public record class IndirectEncoding
         {
             indexes[i] = reader.ReadByte();
         }
-        IndirectBlock indirectBlock = new(indirectEncoding);
+        IndirectBlock indirectBlock = new(indirectEncoding, palette);
         return indirectBlock;
     }
 
@@ -111,17 +122,20 @@ public record class IndirectEncoding
         }
     }
 
-    internal static IndirectBlock ReadCI14X2(EndianBinaryReader reader)
+    internal static IndirectBlock ReadCI14X2(EndianBinaryReader reader, Palette palette)
     {
         IndirectEncoding indirectEncoding = IndirectEncodingDB.CI8;
         ushort[] indexes = new ushort[indirectEncoding.IndexesPerBlock];
         for (int i = 0; i < indexes.Length; i++)
         {
-            ushort index16 = reader.ReadUInt16();
-            ushort index14 = (ushort)(index16 & 0b_00111111_11111111);
-            indexes[i] = index14;
+            //ushort index16 = reader.ReadUInt16();
+            //ushort index14 = (ushort)(index16 & 0b_00111111_11111111);
+            //indexes[i] = index14;
+            ushort index = reader.ReadUInt16();
+            AssertCI14X2Index(index);
+            indexes[i] = index;
         }
-        IndirectBlock indirectBlock = new(indirectEncoding);
+        IndirectBlock indirectBlock = new(indirectEncoding, palette);
         return indirectBlock;
     }
 
@@ -133,14 +147,7 @@ public record class IndirectEncoding
         AssertEncoding(indirectEncoding, indirectBlock.IndirectEncoding);
         foreach (var index in indirectBlock.ColorIndexes)
         {
-            // Make sure index is 14 bits at most
-            bool indexTooLarge = index >= indirectEncoding.MaxPaletteSize;
-            if (indexTooLarge)
-            {
-                string msg = $"Specified index '{index}' is greater than 14 bits.";
-                throw new IndexOutOfRangeException(msg);
-            }
-            // 
+            AssertCI14X2Index(index);
             writer.Write(index);
         }
     }
@@ -183,7 +190,7 @@ public static class IndirectEncodingDB
         IndirectFormat = IndirectTextureFormat.CI14X2,
         BlockWidth = 4,
         BlockHeight = 4,
-        BitsPerIndex = 16, // 14, exclude 2
+        BitsPerIndex = 14,
         BytesPerIndex = 2,
         MaxPaletteSize = 16_384,
     };

@@ -29,9 +29,18 @@ public record class DirectEncoding
     public static CompressionQuality BC1CompressionQuality
     {
         get => field;
-        set => BC1Encoder.OutputOptions.Quality = field;
+        set
+        {
+            field = value;
+            BC1Encoder.OutputOptions.Quality = value;
+        }
     } = CompressionQuality.BestQuality;
 
+
+    /// <summary>
+    ///     The texture format used by this encoding.
+    /// </summary>
+    public required DirectTextureFormat DirectFormat { get; init; }
 
     /// <summary>
     ///     The pixel width of a block for this encoding.
@@ -42,11 +51,6 @@ public record class DirectEncoding
     ///     The pixel height of a block for this encoding.
     /// </summary>
     public required byte Height { get; init; }
-
-    /// <summary>
-    ///     The texture format used by this encoding.
-    /// </summary>
-    public required DirectTextureFormat DirectFormat { get; init; }
 
     /// <summary>
     ///     The number of bits used by this encoding to represent a single colour.
@@ -100,18 +104,14 @@ public record class DirectEncoding
             // Process 2 pixels per pass, high and low nybbles
             for (int x = 0; x < DirectEncoding.Width; x += 2)
             {
+                // Get 2 colors at a time from 1 byte
                 byte nybbles = reader.ReadByte();
-
-                int indexNybbleHigh = x + (y * DirectEncoding.Width);
-                int indexNybbleLow = indexNybbleHigh + 1;
-                // TODO: move to TextureColor
-                byte intensityHi4 = (byte)(nybbles >>> 4   /*implicit*/); // & 0b_0000_1111
-                byte intensityLo4 = (byte)(nybbles >>> 0 & 0b_0000_1111);
-                byte intensityHi = (byte)(intensityHi4 << 4 | intensityHi4);
-                byte intensityLo = (byte)(intensityLo4 << 4 | intensityLo4);
-
-                pixels[indexNybbleHigh] = new TextureColor(intensityHi);
-                pixels[indexNybbleLow] = new TextureColor(intensityLo);
+                (TextureColor color0, TextureColor color1) = TextureColor.FromI4(nybbles);
+                // Assign colors
+                int index0 = x + (y * DirectEncoding.Width);
+                int index1 = index0 + 1;
+                pixels[index0] = color0;
+                pixels[index1] = color1;
             }
         }
         DirectBlock directBlock = new(DirectEncoding, pixels);
@@ -129,11 +129,9 @@ public record class DirectEncoding
             {
                 int index0 = x + (y * DirectEncoding.Width);
                 int index1 = index0 + 1;
-                var intensity0 = directBlock[index0].GetIntensity();
-                var intensity1 = directBlock[index1].GetIntensity();
-                byte intensity01 = (byte)(
-                    ((intensity0 >>> 0) & 0b_1111_0000) +
-                    ((intensity1 >>> 4) & 0b_0000_1111));
+                TextureColor intensity0 = directBlock[index0];
+                TextureColor intensity1 = directBlock[index1];
+                byte intensity01 = TextureColor.ToI4(intensity0, intensity1);
                 writer.Write(intensity01);
             }
         }

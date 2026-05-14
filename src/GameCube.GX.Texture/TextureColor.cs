@@ -10,7 +10,7 @@ namespace GameCube.GX.Texture;
 public struct TextureColor
 {
     /// <summary>
-    ///     Raw colour in RGBA format.
+    ///     Raw colour in RGBA8 format.
     /// </summary>
     [FieldOffset(0x00)] public uint raw;
     /// <summary>
@@ -122,6 +122,40 @@ public struct TextureColor
         float a = c0.a * timeC0 + c1.a * timeC1;
         var color = new TextureColor((byte)r, (byte)g, (byte)b, (byte)a);
         return color;
+    }
+
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="nybbles"></param>
+    /// <returns>
+    ///     
+    /// </returns>
+    public static (TextureColor color0, TextureColor color1) FromI4(byte nybbles)
+    {
+        byte intensityHi4 = (byte)(nybbles >>> 4   /*implicit*/); // & 0b_0000_1111
+        byte intensityLo4 = (byte)(nybbles >>> 0 & 0b_0000_1111);
+        byte intensityHi = (byte)(intensityHi4 << 4 | intensityHi4);
+        byte intensityLo = (byte)(intensityLo4 << 4 | intensityLo4);
+        TextureColor color0 = new(intensityHi);
+        TextureColor color1 = new(intensityLo);
+        return (color0, color1);
+    }
+
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="color0"></param>
+    /// <param name="color1"></param>
+    /// <returns>
+    ///     
+    /// </returns>
+    public static byte ToI4(TextureColor color0, TextureColor color1)
+    {
+        byte intensity0 = (byte)(color0.GetIntensity() >>> 0 & 0b_1111_0000);
+        byte intensity1 = (byte)(color1.GetIntensity() >>> 4 | 0b_0000_1111);
+        byte intensity01 = (byte)(intensity0 | intensity1);
+        return intensity01;
     }
 
     /// <summary>

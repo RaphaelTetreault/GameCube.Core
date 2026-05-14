@@ -8,17 +8,17 @@ public record class IndirectBlock
     /// <summary>
     ///     
     /// </summary>
-    public readonly IndirectEncoding IndirectEncoding;
+    public IndirectEncoding IndirectEncoding { get; init; }
 
     /// <summary>
     ///     
     /// </summary>
-    public readonly Palette Palette;
+    public Palette Palette { get; init; }
 
     /// <summary>
     ///     This block's indirect colour indexes.
     /// </summary>
-    public readonly ushort[] ColorIndexes;
+    public ushort[] ColorIndexes { get; init; }
 
 
     /// <summary>
