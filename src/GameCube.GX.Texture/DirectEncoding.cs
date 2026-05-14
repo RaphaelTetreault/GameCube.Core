@@ -97,7 +97,7 @@ public record class DirectEncoding
 
     internal static DirectBlock ReadI4(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.I4;
+        DirectEncoding DirectEncoding = I4;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -120,7 +120,7 @@ public record class DirectEncoding
 
     internal static void WriteI4(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.I4;
+        DirectEncoding DirectEncoding = I4;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -139,7 +139,7 @@ public record class DirectEncoding
 
     internal static DirectBlock ReadI8(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.I8;
+        DirectEncoding DirectEncoding = I8;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -157,7 +157,7 @@ public record class DirectEncoding
 
     internal static void WriteI8(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.I8;
+        DirectEncoding DirectEncoding = I8;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -173,7 +173,7 @@ public record class DirectEncoding
 
     internal static DirectBlock ReadIA4(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.IA4;
+        DirectEncoding DirectEncoding = IA4;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -191,7 +191,7 @@ public record class DirectEncoding
 
     internal static void WriteIA4(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.IA4;
+        DirectEncoding DirectEncoding = IA4;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -207,7 +207,7 @@ public record class DirectEncoding
 
     internal static DirectBlock ReadIA8(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.IA8;
+        DirectEncoding DirectEncoding = IA8;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -225,7 +225,7 @@ public record class DirectEncoding
 
     internal static void WriteIA8(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.IA8;
+        DirectEncoding DirectEncoding = IA8;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -241,7 +241,7 @@ public record class DirectEncoding
 
     internal static DirectBlock ReadRGB565(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.RGB565;
+        DirectEncoding DirectEncoding = RGB565;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -259,7 +259,7 @@ public record class DirectEncoding
 
     internal static void WriteRGB565(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.RGB565;
+        DirectEncoding DirectEncoding = RGB565;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -275,7 +275,7 @@ public record class DirectEncoding
 
     internal static DirectBlock ReadRGB5A3(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.RGB5A3;
+        DirectEncoding DirectEncoding = RGB5A3;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -293,7 +293,7 @@ public record class DirectEncoding
 
     internal static void WriteRGB5A3(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.RGB5A3;
+        DirectEncoding DirectEncoding = RGB5A3;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
         for (int y = 0; y < DirectEncoding.Height; y++)
         {
@@ -309,7 +309,7 @@ public record class DirectEncoding
 
     internal static DirectBlock ReadRGBA8(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.RGBA8;
+        DirectEncoding DirectEncoding = RGBA8;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
         var bytes = reader.ReadBytes(DirectEncoding.BytesPerBlock);
         var a = ExtractRGBA8Bytes(bytes, 33);
@@ -324,7 +324,7 @@ public record class DirectEncoding
 
     internal static void WriteRGBA8(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.RGBA8;
+        DirectEncoding DirectEncoding = RGBA8;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
         var a = new byte[DirectEncoding.PixelsPerBlock];
         var r = new byte[DirectEncoding.PixelsPerBlock];
@@ -403,7 +403,7 @@ public record class DirectEncoding
 
     internal static DirectBlock ReadCMPR(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.CMPR;
+        DirectEncoding DirectEncoding = CMPR;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
         // CMPR 8x8 is split into 2x2, ie quadrants of 4x4
         for (int qy = 0; qy < 2; qy++)
@@ -447,7 +447,7 @@ public record class DirectEncoding
 
     internal static void WriteCMPR(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = DirectEncodingDB.CMPR;
+        DirectEncoding DirectEncoding = CMPR;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
         // Split this 8x8 block into 4 quadrants (2x2), each 16 pixels (4x4).
         for (int qy = 0; qy < 2; qy++)
@@ -599,12 +599,12 @@ public record class DirectEncoding
         return subBlock;
     }
 
-}
 
 
 
-public static class DirectEncodingDB
-{
+
+
+
     /// <summary>
     ///     Encoding format for '4-bit intensity' grayscale texture.
     /// </summary>
@@ -615,8 +615,8 @@ public static class DirectEncodingDB
         Height = 8,
         BitsPerPixel = 4,
         BytesPerBlock = 32, // 8 * 8 * 0.5(4bpp)
-        ReadBlock = DirectEncoding.ReadI4,
-        WriteBlock = DirectEncoding.WriteI4,
+        ReadBlock = ReadI4,
+        WriteBlock = WriteI4,
     };
 
     /// <summary>
@@ -629,8 +629,8 @@ public static class DirectEncodingDB
         Height = 4,
         BitsPerPixel = 8,
         BytesPerBlock = 32, // 8 * 4 * 1(8bpp)
-        ReadBlock = DirectEncoding.ReadI8,
-        WriteBlock = DirectEncoding.WriteI8,
+        ReadBlock = ReadI8,
+        WriteBlock = WriteI8,
     };
 
     /// <summary>
@@ -643,8 +643,8 @@ public static class DirectEncodingDB
         Height = 4,
         BitsPerPixel = 8,
         BytesPerBlock = 32, // 8 * 4 * 1(8bpp)
-        ReadBlock = DirectEncoding.ReadIA4,
-        WriteBlock = DirectEncoding.WriteIA4,
+        ReadBlock = ReadIA4,
+        WriteBlock = WriteIA4,
     };
 
     /// <summary>
@@ -657,8 +657,8 @@ public static class DirectEncodingDB
         Height = 4,
         BitsPerPixel = 16,
         BytesPerBlock = 32, // 4 * 4 * 2(16bpp)
-        ReadBlock = DirectEncoding.ReadIA8,
-        WriteBlock = DirectEncoding.WriteIA8,
+        ReadBlock = ReadIA8,
+        WriteBlock = WriteIA8,
     };
 
     /// <summary>
@@ -671,8 +671,8 @@ public static class DirectEncodingDB
         Height = 4,
         BitsPerPixel = 16,
         BytesPerBlock = 32, // 4 * 4 * 2(16bpp)
-        ReadBlock = DirectEncoding.ReadRGB565,
-        WriteBlock = DirectEncoding.WriteRGB565,
+        ReadBlock = ReadRGB565,
+        WriteBlock = WriteRGB565,
     };
 
     /// <summary>
@@ -686,8 +686,8 @@ public static class DirectEncodingDB
         Height = 4,
         BitsPerPixel = 16,
         BytesPerBlock = 32, // 4 * 4 * 2(16bpp)
-        ReadBlock = DirectEncoding.ReadRGB5A3,
-        WriteBlock = DirectEncoding.WriteRGB5A3,
+        ReadBlock = ReadRGB5A3,
+        WriteBlock = WriteRGB5A3,
     };
 
     /// <summary>
@@ -703,8 +703,8 @@ public static class DirectEncodingDB
         // However, since they are ordered like so, you can treat it like
         // a 4x4 blocks but of size 64 bytes rather than 32 bytes.
         BytesPerBlock = 64, // 4 * 4 * 2(32bpp)
-        ReadBlock = DirectEncoding.ReadRGBA8,
-        WriteBlock = DirectEncoding.WriteRGBA8,
+        ReadBlock = ReadRGBA8,
+        WriteBlock = WriteRGBA8,
     };
 
     public static readonly DirectEncoding CMPR = new()
@@ -714,19 +714,20 @@ public static class DirectEncodingDB
         Height = 8,
         BitsPerPixel = 4,
         BytesPerBlock = 32, // 8 * 8 * 0.5(4bpp)
-        ReadBlock = DirectEncoding.ReadCMPR,
-        WriteBlock = DirectEncoding.WriteCMPR,
+        ReadBlock = ReadCMPR,
+        WriteBlock = WriteCMPR,
     };
 
-    public static readonly ImmutableDictionary<DirectTextureFormat, DirectEncoding> DirectEncodings =
+    public static readonly ImmutableDictionary<DirectTextureFormat, DirectEncoding> MapFormatToEncoding =
     [
         new(DirectTextureFormat.I4, I4),
-        new(DirectTextureFormat.I8, I8),
-        new(DirectTextureFormat.IA4, IA4),
-        new(DirectTextureFormat.IA8, IA8),
-        new(DirectTextureFormat.RGB565, RGB565),
-        new(DirectTextureFormat.RGB5A3, RGB5A3),
-        new(DirectTextureFormat.RGBA8, RGBA8),
-        new(DirectTextureFormat.CMPR, CMPR),
-    ];
+            new(DirectTextureFormat.I8, I8),
+            new(DirectTextureFormat.IA4, IA4),
+            new(DirectTextureFormat.IA8, IA8),
+            new(DirectTextureFormat.RGB565, RGB565),
+            new(DirectTextureFormat.RGB5A3, RGB5A3),
+            new(DirectTextureFormat.RGBA8, RGBA8),
+            new(DirectTextureFormat.CMPR, CMPR),
+        ];
+
 }

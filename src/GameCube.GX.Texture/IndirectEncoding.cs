@@ -29,9 +29,9 @@ public record class IndirectEncoding
     public required byte BitsPerIndex { get; init; }
 
     /// <summary>
-    ///     The number of bytes used by this encoding to represent a single colour index.
+    ///     The number of bytes used by this encoding per block.
     /// </summary>
-    public required byte BytesPerIndex { get; init; }
+    public required byte BytesPerBlock { get; init; }
 
     /// <summary>
     ///     The maximum number of colours that can be represented using this encoding.
@@ -60,7 +60,7 @@ public record class IndirectEncoding
     internal static void AssertCI14X2Index(ushort index)
     {
         // Make sure index is 14 bits at most
-        bool indexTooLarge = index >= IndirectEncodingDB.CI14X2.MaxPaletteSize;
+        bool indexTooLarge = index >= CI14X2.MaxPaletteSize;
         if (indexTooLarge)
         {
             string msg = $"Specified index '{index}' is greater than 14 bits.";
@@ -70,7 +70,7 @@ public record class IndirectEncoding
 
     internal static IndirectBlock ReadCI4(EndianBinaryReader reader, Palette palette)
     {
-        IndirectEncoding indirectEncoding = IndirectEncodingDB.CI8;
+        IndirectEncoding indirectEncoding = CI8;
         ushort[] indexes = new ushort[indirectEncoding.IndexesPerBlock];
         // process 2 indexes at a time
         for (int i = 0; i < indexes.Length; i += 2)
@@ -88,7 +88,7 @@ public record class IndirectEncoding
     internal static void WriteCI4(EndianBinaryWriter writer, IndirectBlock indirectBlock)
     {
         // TODO: assert sizes
-        AssertEncoding(IndirectEncodingDB.CI4, indirectBlock.IndirectEncoding);
+        AssertEncoding(CI4, indirectBlock.IndirectEncoding);
         // Process 2 indexes at a time
         for (int i = 0; i < indirectBlock.ColorIndexes.Length; i += 2)
         {
@@ -101,7 +101,7 @@ public record class IndirectEncoding
 
     internal static IndirectBlock ReadCI8(EndianBinaryReader reader, Palette palette)
     {
-        IndirectEncoding indirectEncoding = IndirectEncodingDB.CI4;
+        IndirectEncoding indirectEncoding = CI4;
         ushort[] indexes = new ushort[indirectEncoding.IndexesPerBlock];
         for (int i = 0; i < indexes.Length; i++)
         {
@@ -114,7 +114,7 @@ public record class IndirectEncoding
     internal static void WriteCI8(EndianBinaryWriter writer, IndirectBlock indirectBlock)
     {
         // TODO: assert sizes
-        AssertEncoding(IndirectEncodingDB.CI8, indirectBlock.IndirectEncoding);
+        AssertEncoding(CI8, indirectBlock.IndirectEncoding);
         foreach (ushort index in indirectBlock.ColorIndexes)
         {
             byte index8 = checked((byte)index);
@@ -124,7 +124,7 @@ public record class IndirectEncoding
 
     internal static IndirectBlock ReadCI14X2(EndianBinaryReader reader, Palette palette)
     {
-        IndirectEncoding indirectEncoding = IndirectEncodingDB.CI8;
+        IndirectEncoding indirectEncoding = CI8;
         ushort[] indexes = new ushort[indirectEncoding.IndexesPerBlock];
         for (int i = 0; i < indexes.Length; i++)
         {
@@ -142,7 +142,7 @@ public record class IndirectEncoding
 
     internal static void WriteCI14X2(EndianBinaryWriter writer, IndirectBlock indirectBlock)
     {
-        IndirectEncoding indirectEncoding = IndirectEncodingDB.CI14X2;
+        IndirectEncoding indirectEncoding = CI14X2;
         // TODO: assert sizes
         AssertEncoding(indirectEncoding, indirectBlock.IndirectEncoding);
         foreach (var index in indirectBlock.ColorIndexes)
@@ -152,10 +152,8 @@ public record class IndirectEncoding
         }
     }
 
-}
 
-public static class IndirectEncodingDB
-{
+
     /// <summary>
     ///     4-bit colour index.
     /// </summary>
@@ -165,7 +163,7 @@ public static class IndirectEncodingDB
         BlockWidth = 8,
         BlockHeight = 8,
         BitsPerIndex = 4,
-        BytesPerIndex = 0, //!!!!!!
+        BytesPerBlock = 32, // 8 * 8 * 0.5(4bpp)
         MaxPaletteSize = 16,
     };
 
@@ -178,7 +176,7 @@ public static class IndirectEncodingDB
         BlockWidth = 8,
         BlockHeight = 4,
         BitsPerIndex = 8,
-        BytesPerIndex = 1,
+        BytesPerBlock = 32, // 8 * 4 * 1(8bpp)
         MaxPaletteSize = 256,
     };
 
@@ -191,7 +189,8 @@ public static class IndirectEncodingDB
         BlockWidth = 4,
         BlockHeight = 4,
         BitsPerIndex = 14,
-        BytesPerIndex = 2,
+        BytesPerBlock = 32, // 4 * 4 * 2(14bpp)
         MaxPaletteSize = 16_384,
     };
+
 }
