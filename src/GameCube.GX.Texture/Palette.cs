@@ -53,6 +53,7 @@ public record class Palette
 
     internal Palette() { }
 
+
     [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
     public Palette(PaletteColorFormat colorFormat, IndirectEncoding indirectEncoding, TextureColor[] paletteValues)
     {

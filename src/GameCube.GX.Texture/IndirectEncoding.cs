@@ -1,13 +1,17 @@
 ﻿using Manifold.IO;
 using System;
+using System.Collections.Immutable;
 
 namespace GameCube.GX.Texture;
 
 /// <summary>
 ///     The base representation of a GameCube indirect-colour texture format encoding.
 /// </summary>
-public record class IndirectEncoding
+public record class IndirectEncoding : IEncoding
 {
+    public delegate IndirectBlock ReadIndirectBlock(EndianBinaryReader reader);
+    public delegate void WriteIndirectBlock(EndianBinaryWriter writer, IndirectBlock indirectBlock);
+
     /// <summary>
     ///     The texture format used by this encoding.
     /// </summary>
@@ -38,12 +42,35 @@ public record class IndirectEncoding
     /// </summary>
     public required ushort MaxPaletteSize { get; init; }
 
+    public required ReadIndirectBlock ReadBlock { get; init; }
+    public required WriteIndirectBlock WriteBlock { get; init; }
+
+
     /// <summary>
     ///     
     /// </summary>
     //public ushort MaxPaletteIndex => (ushort)(MaxPaletteSize - 1);
 
     public int IndexesPerBlock => BlockWidth * BlockHeight;
+
+
+    public IndirectBlock[] ReadBlocks(EndianBinaryReader reader, int blocksCount)
+    {
+        IndirectBlock[] directBlocks = new IndirectBlock[blocksCount];
+        for (int i = 0; i < blocksCount; i++)
+            directBlocks[i] = ReadBlock.Invoke(reader);
+        return directBlocks;
+    }
+
+    public IndirectBlock[] ReadBlocks(EndianBinaryReader reader, int pxWidth, int pxHeight)
+    {
+        BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, this);
+        IndirectBlock[] indirectBlocks = ReadBlocks(reader, blocks.Count);
+        return indirectBlocks;
+    }
+
+
+
 
 
     internal static void AssertEncoding(IndirectEncoding expected, IndirectEncoding value)
@@ -68,7 +95,7 @@ public record class IndirectEncoding
         }
     }
 
-    internal static IndirectBlock ReadCI4(EndianBinaryReader reader, Palette palette)
+    internal static IndirectBlock ReadCI4(EndianBinaryReader reader)//, Palette palette)
     {
         IndirectEncoding indirectEncoding = CI8;
         ushort[] indexes = new ushort[indirectEncoding.IndexesPerBlock];
@@ -81,7 +108,7 @@ public record class IndirectEncoding
             indexes[i + 0] = index0;
             indexes[i + 1] = index1;
         }
-        IndirectBlock indirectBlock = new(indirectEncoding, palette);
+        IndirectBlock indirectBlock = new(indirectEncoding, indexes);
         return indirectBlock;
     }
 
@@ -99,7 +126,7 @@ public record class IndirectEncoding
         }
     }
 
-    internal static IndirectBlock ReadCI8(EndianBinaryReader reader, Palette palette)
+    internal static IndirectBlock ReadCI8(EndianBinaryReader reader)//, Palette palette)
     {
         IndirectEncoding indirectEncoding = CI4;
         ushort[] indexes = new ushort[indirectEncoding.IndexesPerBlock];
@@ -107,7 +134,7 @@ public record class IndirectEncoding
         {
             indexes[i] = reader.ReadByte();
         }
-        IndirectBlock indirectBlock = new(indirectEncoding, palette);
+        IndirectBlock indirectBlock = new(indirectEncoding, indexes);
         return indirectBlock;
     }
 
@@ -122,7 +149,7 @@ public record class IndirectEncoding
         }
     }
 
-    internal static IndirectBlock ReadCI14X2(EndianBinaryReader reader, Palette palette)
+    internal static IndirectBlock ReadCI14X2(EndianBinaryReader reader)//, Palette palette)
     {
         IndirectEncoding indirectEncoding = CI8;
         ushort[] indexes = new ushort[indirectEncoding.IndexesPerBlock];
@@ -135,7 +162,7 @@ public record class IndirectEncoding
             AssertCI14X2Index(index);
             indexes[i] = index;
         }
-        IndirectBlock indirectBlock = new(indirectEncoding, palette);
+        IndirectBlock indirectBlock = new(indirectEncoding, indexes);
         return indirectBlock;
     }
 
@@ -165,6 +192,8 @@ public record class IndirectEncoding
         BitsPerIndex = 4,
         BytesPerBlock = 32, // 8 * 8 * 0.5(4bpp)
         MaxPaletteSize = 16,
+        ReadBlock = ReadCI4,
+        WriteBlock = WriteCI4,
     };
 
     /// <summary>
@@ -178,6 +207,8 @@ public record class IndirectEncoding
         BitsPerIndex = 8,
         BytesPerBlock = 32, // 8 * 4 * 1(8bpp)
         MaxPaletteSize = 256,
+        ReadBlock = ReadCI8,
+        WriteBlock = WriteCI8,
     };
 
     /// <summary>
@@ -191,6 +222,15 @@ public record class IndirectEncoding
         BitsPerIndex = 14,
         BytesPerBlock = 32, // 4 * 4 * 2(14bpp)
         MaxPaletteSize = 16_384,
+        ReadBlock = ReadCI14X2,
+        WriteBlock = WriteCI14X2,
     };
+
+    public static readonly ImmutableDictionary<IndirectTextureFormat, IndirectEncoding> MapFormatToEncoding =
+    [
+        new(IndirectTextureFormat.CI4, CI4),
+        new(IndirectTextureFormat.CI8, CI8),
+        new(IndirectTextureFormat.CI14X2, CI14X2),
+    ];
 
 }

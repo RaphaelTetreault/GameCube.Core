@@ -10,7 +10,7 @@ namespace GameCube.GX.Texture;
 /// <summary>
 ///     The base representation of a GameCube direct-colour texture format encoding.
 /// </summary>
-public record class DirectEncoding
+public record class DirectEncoding : IEncoding
 {
     public delegate DirectBlock ReadDirectBlock(EndianBinaryReader reader);
     public delegate void WriteDirectBlock(EndianBinaryWriter writer, DirectBlock directBlock);
@@ -45,12 +45,12 @@ public record class DirectEncoding
     /// <summary>
     ///     The pixel width of a block for this encoding.
     /// </summary>
-    public required byte Width { get; init; }
+    public required byte BlockWidth { get; init; }
 
     /// <summary>
     ///     The pixel height of a block for this encoding.
     /// </summary>
-    public required byte Height { get; init; }
+    public required byte BlockHeight { get; init; }
 
     /// <summary>
     ///     The number of bits used by this encoding to represent a single colour.
@@ -81,7 +81,24 @@ public record class DirectEncoding
     /// <summary>
     ///     The pixel width of a block for this encoding.
     /// </summary>
-    public int PixelsPerBlock => Width * Height;
+    public int PixelsPerBlock => BlockWidth * BlockHeight;
+
+
+
+    public DirectBlock[] ReadBlocks(EndianBinaryReader reader, int blocksCount)
+    {
+        DirectBlock[] directBlocks = new DirectBlock[blocksCount];
+        for (int i = 0; i < blocksCount; i++)
+            directBlocks[i] = ReadBlock.Invoke(reader);
+        return directBlocks;
+    }
+    public DirectBlock[] ReadBlocks(EndianBinaryReader reader, int pxWidth, int pxHeight)
+    {
+        BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, this);
+        DirectBlock[] directBlocks = ReadBlocks(reader, blocks.Count);
+        return directBlocks;
+    }
+
 
 
     internal static void AssertEncoding(DirectEncoding expected, DirectEncoding value)
@@ -99,16 +116,16 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = I4;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
             // Process 2 pixels per pass, high and low nybbles
-            for (int x = 0; x < DirectEncoding.Width; x += 2)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x += 2)
             {
                 // Get 2 colors at a time from 1 byte
                 byte nybbles = reader.ReadByte();
                 (TextureColor color0, TextureColor color1) = TextureColor.FromI4(nybbles);
                 // Assign colors
-                int index0 = x + (y * DirectEncoding.Width);
+                int index0 = x + (y * DirectEncoding.BlockWidth);
                 int index1 = index0 + 1;
                 pixels[index0] = color0;
                 pixels[index1] = color1;
@@ -122,12 +139,12 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = I4;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
             // Process 2 pixels per pass, set as high and low nybbles
-            for (int x = 0; x < DirectEncoding.Width; x += 2)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x += 2)
             {
-                int index0 = x + (y * DirectEncoding.Width);
+                int index0 = x + (y * DirectEncoding.BlockWidth);
                 int index1 = index0 + 1;
                 TextureColor intensity0 = directBlock[index0];
                 TextureColor intensity1 = directBlock[index1];
@@ -141,13 +158,13 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = I8;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.Width; x++)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
             {
                 byte i8 = reader.ReadByte();
                 var color = new TextureColor(i8);
-                int index = x + (y * DirectEncoding.Width);
+                int index = x + (y * DirectEncoding.BlockWidth);
                 pixels[index] = color;
             }
         }
@@ -159,11 +176,11 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = I8;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.Width; x++)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
             {
-                int index = x + (y * DirectEncoding.Width);
+                int index = x + (y * DirectEncoding.BlockWidth);
                 var color = directBlock[index];
                 byte i8 = color.GetIntensity();
                 writer.Write(i8);
@@ -175,13 +192,13 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = IA4;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.Width; x++)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
             {
                 byte ia4 = reader.ReadByte();
                 var color = TextureColor.FromIA4(ia4);
-                int index = x + (y * DirectEncoding.Width);
+                int index = x + (y * DirectEncoding.BlockWidth);
                 pixels[index] = color;
             }
         }
@@ -193,11 +210,11 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = IA4;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.Width; x++)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
             {
-                int index = x + (y * DirectEncoding.Width);
+                int index = x + (y * DirectEncoding.BlockWidth);
                 var color = directBlock[index];
                 byte ia4 = TextureColor.ToIA4(color);
                 writer.Write(ia4);
@@ -209,13 +226,13 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = IA8;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.Width; x++)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
             {
                 ushort ia8 = reader.ReadUInt16();
                 var color = TextureColor.FromIA8(ia8);
-                int index = x + (y * DirectEncoding.Width);
+                int index = x + (y * DirectEncoding.BlockWidth);
                 pixels[index] = color;
             }
         }
@@ -227,11 +244,11 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = IA8;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.Width; x++)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
             {
-                int index = x + (y * DirectEncoding.Width);
+                int index = x + (y * DirectEncoding.BlockWidth);
                 var color = directBlock[index];
                 ushort ia8 = TextureColor.ToIA8(color);
                 writer.Write(ia8);
@@ -243,13 +260,13 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = RGB565;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.Width; x++)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
             {
                 ushort rgb565 = reader.ReadUInt16();
                 var color = TextureColor.FromRGB565(rgb565);
-                int index = x + (y * DirectEncoding.Width);
+                int index = x + (y * DirectEncoding.BlockWidth);
                 pixels[index] = color;
             }
         }
@@ -261,11 +278,11 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = RGB565;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.Width; x++)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
             {
-                int index = x + (y * DirectEncoding.Width);
+                int index = x + (y * DirectEncoding.BlockWidth);
                 var color = directBlock[index];
                 ushort rgb565 = TextureColor.ToRGB565(color);
                 writer.Write(rgb565);
@@ -277,13 +294,13 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = RGB5A3;
         TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.Width; x++)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
             {
                 ushort rgb5a3 = reader.ReadUInt16();
                 var color = TextureColor.FromRGB5A3(rgb5a3);
-                int index = x + (y * DirectEncoding.Width);
+                int index = x + (y * DirectEncoding.BlockWidth);
                 pixels[index] = color;
             }
         }
@@ -295,11 +312,11 @@ public record class DirectEncoding
     {
         DirectEncoding DirectEncoding = RGB5A3;
         AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.Height; y++)
+        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.Width; x++)
+            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
             {
-                int index = x + (y * DirectEncoding.Width);
+                int index = x + (y * DirectEncoding.BlockWidth);
                 var color = directBlock[index];
                 ushort rgb5a3 = TextureColor.ToRGB5A3(color);
                 writer.Write(rgb5a3);
@@ -611,8 +628,8 @@ public record class DirectEncoding
     public static readonly DirectEncoding I4 = new()
     {
         DirectFormat = DirectTextureFormat.I4,
-        Width = 8,
-        Height = 8,
+        BlockWidth = 8,
+        BlockHeight = 8,
         BitsPerPixel = 4,
         BytesPerBlock = 32, // 8 * 8 * 0.5(4bpp)
         ReadBlock = ReadI4,
@@ -625,8 +642,8 @@ public record class DirectEncoding
     public static readonly DirectEncoding I8 = new()
     {
         DirectFormat = DirectTextureFormat.I8,
-        Width = 8,
-        Height = 4,
+        BlockWidth = 8,
+        BlockHeight = 4,
         BitsPerPixel = 8,
         BytesPerBlock = 32, // 8 * 4 * 1(8bpp)
         ReadBlock = ReadI8,
@@ -639,8 +656,8 @@ public record class DirectEncoding
     public static readonly DirectEncoding IA4 = new()
     {
         DirectFormat = DirectTextureFormat.IA4,
-        Width = 8,
-        Height = 4,
+        BlockWidth = 8,
+        BlockHeight = 4,
         BitsPerPixel = 8,
         BytesPerBlock = 32, // 8 * 4 * 1(8bpp)
         ReadBlock = ReadIA4,
@@ -653,8 +670,8 @@ public record class DirectEncoding
     public static readonly DirectEncoding IA8 = new()
     {
         DirectFormat = DirectTextureFormat.IA8,
-        Width = 4,
-        Height = 4,
+        BlockWidth = 4,
+        BlockHeight = 4,
         BitsPerPixel = 16,
         BytesPerBlock = 32, // 4 * 4 * 2(16bpp)
         ReadBlock = ReadIA8,
@@ -667,8 +684,8 @@ public record class DirectEncoding
     public static readonly DirectEncoding RGB565 = new()
     {
         DirectFormat = DirectTextureFormat.RGB565,
-        Width = 4,
-        Height = 4,
+        BlockWidth = 4,
+        BlockHeight = 4,
         BitsPerPixel = 16,
         BytesPerBlock = 32, // 4 * 4 * 2(16bpp)
         ReadBlock = ReadRGB565,
@@ -682,8 +699,8 @@ public record class DirectEncoding
     public static readonly DirectEncoding RGB5A3 = new()
     {
         DirectFormat = DirectTextureFormat.RGB5A3,
-        Width = 4,
-        Height = 4,
+        BlockWidth = 4,
+        BlockHeight = 4,
         BitsPerPixel = 16,
         BytesPerBlock = 32, // 4 * 4 * 2(16bpp)
         ReadBlock = ReadRGB5A3,
@@ -696,8 +713,8 @@ public record class DirectEncoding
     public static readonly DirectEncoding RGBA8 = new()
     {
         DirectFormat = DirectTextureFormat.RGBA8,
-        Width = 4,
-        Height = 4,
+        BlockWidth = 4,
+        BlockHeight = 4,
         BitsPerPixel = 32,
         // Big lie: RGBA8 takes 2 4x4 blocks, one is AR then the other GB
         // However, since they are ordered like so, you can treat it like
@@ -710,8 +727,8 @@ public record class DirectEncoding
     public static readonly DirectEncoding CMPR = new()
     {
         DirectFormat = DirectTextureFormat.CMPR,
-        Width = 8,
-        Height = 8,
+        BlockWidth = 8,
+        BlockHeight = 8,
         BitsPerPixel = 4,
         BytesPerBlock = 32, // 8 * 8 * 0.5(4bpp)
         ReadBlock = ReadCMPR,
@@ -721,13 +738,13 @@ public record class DirectEncoding
     public static readonly ImmutableDictionary<DirectTextureFormat, DirectEncoding> MapFormatToEncoding =
     [
         new(DirectTextureFormat.I4, I4),
-            new(DirectTextureFormat.I8, I8),
-            new(DirectTextureFormat.IA4, IA4),
-            new(DirectTextureFormat.IA8, IA8),
-            new(DirectTextureFormat.RGB565, RGB565),
-            new(DirectTextureFormat.RGB5A3, RGB5A3),
-            new(DirectTextureFormat.RGBA8, RGBA8),
-            new(DirectTextureFormat.CMPR, CMPR),
-        ];
+        new(DirectTextureFormat.I8, I8),
+        new(DirectTextureFormat.IA4, IA4),
+        new(DirectTextureFormat.IA8, IA8),
+        new(DirectTextureFormat.RGB565, RGB565),
+        new(DirectTextureFormat.RGB5A3, RGB5A3),
+        new(DirectTextureFormat.RGBA8, RGBA8),
+        new(DirectTextureFormat.CMPR, CMPR),
+    ];
 
 }

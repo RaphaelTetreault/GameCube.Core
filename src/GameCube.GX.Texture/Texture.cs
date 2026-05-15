@@ -38,22 +38,6 @@ public class Texture
     public TextureColor[] Pixels { get; private set; } = [];
 
     /// <summary>
-    ///     The texture's colour pallete, if texture uses a colour-indexed texture format.
-    /// </summary>
-    public Palette? Palette { get; private set; } = null;
-
-    /// <summary>
-    ///     The texture's blocks.
-    /// </summary>
-    public Block[] Blocks { get; private set; } = [];
-
-    /// <summary>
-    ///     True if the texture's palette is not null.
-    /// </summary>
-    public bool IsPaletted => Palette is not null;
-
-
-    /// <summary>
     ///     Indexer to get get/set a direct colour (pixel) within this texture.
     /// </summary>
     /// <param name="i">The direct colour (pixel) index in this texture.</param>
@@ -122,126 +106,113 @@ public class Texture
     }
 
 
+    // TODO: put IEncoding.MapFormatToEncoding inside texture...?
+    //public IEncoding Encoding => IEncoding.MapFormatToEncoding[Format];
 
-    public static DirectBlock[] CreateDirectColorBlocksFromTexture(Texture texture, DirectEncoding directEncoding, out int blocksCountHorizontal, out int blocksCountVertical)
+    // TODO
+    // DirectTextureFormat = DirectColorFormat
+    // IndirectTextureFormat = IndirectIndexFormat
+    // PaletteColorFormat = PaletteColorFormat (ok)
+
+
+    public static TextureColor[] CopyArea(Texture src, int srcOriginX, int srcOriginY, int dstWidth, int dstHeight)
     {
-        // Create blocks array. Each block will contain pixel data for texture.
-        blocksCountHorizontal = directEncoding.GetHorizontalBlocksCountToEncode(texture);
-        blocksCountVertical = directEncoding.GetVerticalBlocksCountToEncode(texture);
-        int blocksCount = blocksCountHorizontal * blocksCountVertical;
-        DirectBlock[] blocks = new DirectBlock[blocksCount];
+        // Create array "slice"
+        int size = dstWidth * dstHeight;
+        TextureColor[] copy = new TextureColor[size];
 
-        // Copy colors from array texture into blocks
-        TextureIndexToBlockIndex colorsToBlock = (int textureOriginX, int textureOriginY, int blockIndex) =>
+        // Figure out how many pixels to copy over. On smaller textures (eg: 4x2), outside region is black.
+        // In other words, this "clamps" the copy and leaves out-of-bounds indices unset (black pixels).
+        IEncoding encoding = IEncoding.MapFormatToEncoding[src.Format];
+        int nPixelsX = Math.Min(encoding.BlockWidth, src.Width - srcOriginX);
+        int nPixelsY = Math.Min(encoding.BlockHeight, src.Height - srcOriginY);
+
+        // Copy texture region into block
+        for (int y = 0; y < nPixelsY; y++)
         {
-            blocks[blockIndex] = RegionToDirectBlock(texture, directEncoding, textureOriginX, textureOriginY);
-        };
-        LoopTextureIndexToBlockIndex(blocksCountHorizontal, blocksCountVertical, directEncoding.Width, directEncoding.Height, colorsToBlock);
+            int srcY = (srcOriginY + y) * src.Width;
+            int dstY = y * dstWidth;
+            for (int x = 0; x < nPixelsX; x++)
+            {
+                int srcX = srcOriginX + x;
+                int dstX = x;
+                int srcIndex = srcY + srcX;
+                int dstIndex = dstY + dstX;
+                //
+                copy[dstIndex] = src[srcIndex];
+            }
+        }
+
+        return copy;
+    }
+
+    public readonly record struct BlockOrigin(int X, int Y);
+    public static BlockOrigin[] GetBlockOrigins(Texture texture, IEncoding encoding)
+    {
+        // Get info
+        BlocksInfo blocksInfo = BlocksInfo.FromTexture(texture);
+        // Create origin for each block within texture
+        BlockOrigin[] origins = new BlockOrigin[blocksInfo.Count];
+
+        // Iterate over each block
+        for (int y = 0; y < blocksInfo.CountY; y++)
+        {
+            int originY = y * encoding.BlockHeight;
+            for (int x = 0; x < blocksInfo.CountX; x++)
+            {
+                int originX = x * encoding.BlockWidth;
+                int originIndex = y * blocksInfo.CountX + x;
+                origins[originIndex] = new(originX, originY);
+            }
+        }
+
+        return origins;
+    }
+
+
+    public static DirectBlock[] CreateDirectColorBlocksFromTexture(Texture texture, DirectEncoding directEncoding, out BlocksInfo blocksInfo)
+    {
+        // 
+        blocksInfo = BlocksInfo.FromPixelDimensions(texture.Width, texture.Height, directEncoding);
+        BlockOrigin[] blockOrigins = GetBlockOrigins(texture, directEncoding);
+        DirectBlock[] blocks = new DirectBlock[blocksInfo.Count];
+        //
+        Assert.IsTrue(blocks.Length == blockOrigins.Length);
+
+        // 
+        for (int i = 0; i < blockOrigins.Length; i++)
+        {
+            BlockOrigin blockOrigin = blockOrigins[i];
+            TextureColor[] pixels = CopyArea(texture, blockOrigin.X, blockOrigin.Y, directEncoding.BlockHeight, directEncoding.BlockHeight);
+            blocks[i] = new(directEncoding, pixels);
+        }
 
         return blocks;
     }
     public static DirectBlock[] CreateDirectColorBlocksFromTexture(Texture texture, DirectEncoding directEncoding)
-        => CreateDirectColorBlocksFromTexture(texture, directEncoding, out _, out _);
+        => CreateDirectColorBlocksFromTexture(texture, directEncoding, out _);
 
-    public static IndirectBlock[] CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, IndirectEncoding indirectEncoding, TextureFormat paletteFormat, out Palette palette, out int blocksCountHorizontal, out int blocksCountVertical)
+    public static (IndirectBlock[] blocks, Palette palette) CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, IndirectEncoding indirectEncoding, PaletteColorFormat paletteFormat, out BlocksInfo blocksInfo)
     {
-        // Create blocks array. Each block will contain indexes for image.
-        blocksCountHorizontal = indirectEncoding.GetHorizontalBlocksCountToEncode(texture);
-        blocksCountVertical = indirectEncoding.GetVerticalBlocksCountToEncode(texture);
-        int blocksCount = blocksCountHorizontal * blocksCountVertical;
-        IndirectBlock[] blocks = new IndirectBlock[blocksCount];
+        // 
+        blocksInfo = BlocksInfo.FromPixelDimensions(texture.Width, texture.Height, indirectEncoding);
+        BlockOrigin[] blockOrigins = GetBlockOrigins(texture, indirectEncoding);
+        IndirectBlock[] blocks = new IndirectBlock[blocksInfo.Count];
+        //
+        Assert.IsTrue(blocks.Length == blockOrigins.Length);
 
-        // Create palette
-        ToIndexesAndPalette256(texture, indirectEncoding, paletteFormat, out ushort[] indexes, out palette);
-
-        // Copy indexes from array (indexes generated from texture) into blocks
-        TextureIndexToBlockIndex indexesToBlock = (int textureOriginX, int textureOriginY, int blockIndex) =>
+        // 
+        for (int i = 0; i < blockOrigins.Length; i++)
         {
-            blocks[blockIndex] = RegionToIndirectBlock(indexes, texture.Width, texture.Height, indirectEncoding, textureOriginX, textureOriginY);
-        };
-        LoopTextureIndexToBlockIndex(blocksCountHorizontal, blocksCountVertical, indirectEncoding.BlockWidth, indirectEncoding.BlockHeight, indexesToBlock);
+            BlockOrigin blockOrigin = blockOrigins[i];
+            ushort[] indexes = CopyArea(texture, blockOrigin.X, blockOrigin.Y, indirectEncoding.BlockHeight, indirectEncoding.BlockHeight);
+            blocks[i] = new(indirectEncoding, indexes);
+        }
 
         return blocks;
     }
-    public static void CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, TextureFormat indirectFormat, out IndirectBlock[] blocks, TextureFormat paletteFormat, out Palette palette)
-    {
-        IndirectEncoding encoding = IndirectEncoding.GetEncoding(indirectFormat);
-        blocks = CreateIndirectColorBlocksAndPaletteFromTexture(texture, encoding, paletteFormat, out palette, out _, out _);
-    }
-
-
-    // NEW IDEA: pass in delegate which gives the proper indexes for doing: tex[x,y] => block[x,y]
-    private delegate void TextureIndexToBlockIndex(int originX, int originY, int blockIndex);
-    private static void LoopTextureIndexToBlockIndex(int blockCountHorizontal, int blockCountVertical, int blockWidth, int blockHeight, TextureIndexToBlockIndex action)
-    {
-        for (int v = 0; v < blockCountVertical; v++)
-        {
-            int originY = v * blockHeight;
-            for (int h = 0; h < blockCountHorizontal; h++)
-            {
-                int originX = h * blockWidth;
-                int blockIndex = h + v * blockCountHorizontal;
-                action(originX, originY, blockIndex);
-            }
-        }
-    }
-
-
-
-    /// <summary>
-    ///     Cretae a new texture block from a <paramref name="sourceTexture"/>.
-    /// </summary>
-    /// <param name="sourceTexture">The source texture to copy a region from.</param>
-    /// <param name="directEncoding">The encoding to use use for the output block.</param>
-    /// <param name="originX">The left edge of the copied region from <paramref name="sourceTexture"/>.</param>
-    /// <param name="originY">The top edge of the copied region from <paramref name="sourceTexture"/>.</param>
-    /// <returns>
-    ///     A new block which contains the region sampled from <paramref name="sourceTexture"/>. The width
-    ///     and height of the block depends on the <paramref name="directEncoding"/> used.
-    /// </returns>
-    private static DirectBlock RegionToDirectBlock(Texture sourceTexture, DirectEncoding directEncoding, int originX, int originY)
-    {
-        var block = new DirectBlock(directEncoding);
-
-        // Figure out how many pixels to copy over. On smaller textures (eg: 4x2), outside region is black.
-        int nPixelsX = Math.Min(directEncoding.Width, sourceTexture.Width - originX);
-        int nPixelsY = Math.Min(directEncoding.Height, sourceTexture.Height - originY);
-
-        // Copy texture region into block
-        for (int y = 0; y < nPixelsY; y++)
-        {
-            int sourceY = originY + y;
-            for (int x = 0; x < nPixelsX; x++)
-            {
-                int sourceX = originX + x;
-                block[x, y] = sourceTexture[sourceX, sourceY];
-            }
-        }
-
-        return block;
-    }
-    private static IndirectBlock RegionToIndirectBlock(ushort[] indexes, int width, int height, IndirectEncoding indirectEncoding, int originX, int originY)
-    {
-        var block = new IndirectBlock(indirectEncoding);
-
-        // Figure out how many pixels to copy over. On smaller textures (eg: 4x2), outside region is black.
-        int nPixelsX = Math.Min(indirectEncoding.BlockWidth, width - originX);
-        int nPixelsY = Math.Min(indirectEncoding.BlockHeight, height - originY);
-
-        // Copy texture region into block
-        for (int y = 0; y < nPixelsY; y++)
-        {
-            int sourceY = originY * width + y;
-            for (int x = 0; x < nPixelsX; x++)
-            {
-                int sourceX = originX + x;
-                int source = sourceX + sourceY;
-                block[x, y] = indexes[source];
-            }
-        }
-
-        return block;
-    }
+    public static (IndirectBlock[] blocks, Palette palette) CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, IndirectEncoding indirectEncoding, PaletteColorFormat paletteFormat)
+        => CreateIndirectColorBlocksAndPaletteFromTexture(texture, indirectEncoding, paletteFormat);
 
     private static Image<Rgba32> ToImage(Texture sourceTexture)
     {
@@ -258,67 +229,6 @@ public class Texture
 
         return image;
     }
-    private static void ToIndexesAndPalette256(Texture sourceTexture, IndirectEncoding indirectEncoding, TextureFormat paletteFormat, out ushort[] indexes, out Palette palette)
-    {
-        // Validate encoder
-        switch (indirectEncoding.Format)
-        {
-            // Valid formats
-            case TextureFormat.CI4:
-            case TextureFormat.CI8:
-                break;
-
-            // Not yet supported
-            case TextureFormat.CI14X2:
-            {
-                string msg = $"CI14X2 format is not yet supported. Use CI8 if possible.";
-                throw new NotImplementedException(msg);
-            }
-
-            // Everything else
-            default:
-            {
-                string msg = $"Type {indirectEncoding.Format} is not a valid indexed format.";
-                throw new ArgumentException(msg);
-            }
-        };
-
-        // init some settings
-        var configuration = new Configuration() { };
-        var quantizerOptions = new QuantizerOptions()
-        {
-            MaxColors = indirectEncoding.MaxPaletteSize,
-        }; // See also: dithers
-        var quantizer = new WuQuantizer(quantizerOptions);
-        var rgba32Quantizer = quantizer.CreatePixelSpecificQuantizer<Rgba32>(configuration);
-
-        // build palette and indices
-        var image = ToImage(sourceTexture);
-        var frame = image.Frames.RootFrame;
-        var indexedImageFrame = rgba32Quantizer.BuildPaletteAndQuantizeFrame(frame, frame.Bounds());
-
-        // PALETTE
-        Rgba32[] paletteColors = indexedImageFrame.Palette.ToArray();
-        palette = Palette.CreatePalette(paletteFormat);
-        palette.SetColors(paletteColors);
-
-        // INDEXES
-        int stride = image.Width;
-        int capacity = image.Width * image.Height;
-        indexes = new ushort[capacity];
-        for (int y = 0; y < image.Height; y++)
-        {
-            int originY = y * stride;
-            var row = indexedImageFrame.GetWritablePixelRowSpanUnsafe(y);
-            for (int x = 0; x < image.Width; x++)
-            {
-                int index = x + originY;
-                indexes[index] = row[x];
-            }
-        }
-    }
-
-
 
     /// <summary>
     ///     Create a new texture of <paramref name="width"/> by <paramref name="height"/> size.
@@ -369,105 +279,46 @@ public class Texture
     /// </returns>
     public static Texture FromDirectBlocks(DirectBlock[] directBlocks, int blocksCountHorizontal, int blocksCountVertical)
     {
-        int numBlocks = blocksCountHorizontal * blocksCountVertical;
-        if (numBlocks != directBlocks.Length)
-        {
-            string msg =
-                $"Number of {nameof(DirectBlock)} does not match length " +
-                $"{nameof(blocksCountHorizontal)}*{nameof(blocksCountVertical)}.";
-            throw new ArgumentException(msg);
-        }
+        //int numBlocks = blocksCountHorizontal * blocksCountVertical;
+        //if (numBlocks != directBlocks.Length)
+        //{
+        //    string msg =
+        //        $"Number of {nameof(DirectBlock)} does not match length " +
+        //        $"{nameof(blocksCountHorizontal)}*{nameof(blocksCountVertical)}.";
+        //    throw new ArgumentException(msg);
+        //}
 
-        int subBlockWidth = directBlocks[0].Width;
-        int subBlockHeight = directBlocks[0].Height;
-        var format = directBlocks[0].Format;
+        //int subBlockWidth = directBlocks[0].Width;
+        //int subBlockHeight = directBlocks[0].Height;
+        //var format = directBlocks[0].Format;
 
-        int pixelsWidth = blocksCountHorizontal * subBlockWidth;
-        int pixelsHeight = blocksCountVertical * subBlockHeight;
-        var texture = new Texture(pixelsWidth, pixelsHeight, format);
-        texture.Blocks = directBlocks;
+        //int pixelsWidth = blocksCountHorizontal * subBlockWidth;
+        //int pixelsHeight = blocksCountVertical * subBlockHeight;
+        //var texture = new Texture(pixelsWidth, pixelsHeight, format);
+        //texture.Blocks = directBlocks;
 
-        int pixelIndex = 0;
-        // Linearize texture pixels
-        for (int v = 0; v < blocksCountVertical; v++)
-        {
-            for (int y = 0; y < subBlockHeight; y++)
-            {
-                for (int h = 0; h < blocksCountHorizontal; h++)
-                {
-                    // Which block we are sampling
-                    int blockIndex = h + v * blocksCountHorizontal;
-                    for (int x = 0; x < subBlockWidth; x++)
-                    {
-                        // Which sub-block we are sampling
-                        int colorIndex = x + y * subBlockWidth;
-                        var block = directBlocks[blockIndex];
-                        var color = block.Colors[colorIndex];
-                        texture.Pixels[pixelIndex++] = color;
-                    }
-                }
-            }
-        }
-        return texture;
-    }
-
-    /// <summary>
-    ///     Create a texture from an array of <paramref name="indirectBlocks"/> where <paramref name="blocksCountHorizontal"/>
-    ///     defines the number of blocks across the texture width and <paramref name="blocksCountVertical"/> defines the number
-    ///     of blocks across the texture height.
-    /// </summary>
-    /// <param name="indirectBlocks">The source texture blocks to construct the texture with.</param>
-    /// <param name="blocksCountHorizontal">The number of blocks along the horizontal axis.</param>
-    /// <param name="blocksCountVertical">The number of blocks along the vertical axis.</param>
-    /// <param name="palette">The colour palette for the <paramref name="indirectBlocks"/> indexes to sample from.</param>
-    /// <returns>
-    ///     A new texture created from the source <paramref name="indirectBlocks"/> and <paramref name="palette"/>.
-    /// </returns>
-    public static Texture FromIndirectBlocksAndPalette(IndirectBlock[] indirectBlocks, int blocksCountHorizontal, int blocksCountVertical, Palette palette)
-    {
-        int numBlocks = blocksCountHorizontal * blocksCountVertical;
-        if (numBlocks != indirectBlocks.Length)
-        {
-            string msg =
-                $"Number of {nameof(IndirectBlock)} does not match length " +
-                $"{nameof(blocksCountHorizontal)}*{nameof(blocksCountVertical)}.";
-            throw new ArgumentException(msg);
-        }
-
-        int blockWidth = indirectBlocks[0].Width;
-        int blockHeight = indirectBlocks[0].Height;
-        int pixelsCount = blocksCountHorizontal * blocksCountVertical * blockWidth * blockHeight;
-        var texture = new Texture
-        {
-            Format = indirectBlocks[0].Format,
-            Width = blocksCountHorizontal * blockWidth,
-            Height = blocksCountVertical * blockHeight,
-            Pixels = new TextureColor[pixelsCount],
-            Palette = palette,
-            Blocks = indirectBlocks,
-        };
-
-        int pixelIndex = 0;
-        // Linearize texture pixels
-        for (int v = 0; v < blocksCountVertical; v++)
-        {
-            for (int y = 0; y < blockHeight; y++)
-            {
-                for (int h = 0; h < blocksCountHorizontal; h++)
-                {
-                    int blockIndex = v * blocksCountHorizontal + h;
-                    for (int x = 0; x < blockWidth; x++)
-                    {
-                        int subBlockIndex = y * blockWidth + x;
-                        var indirectBlock = indirectBlocks[blockIndex];
-                        var indirectIndex = indirectBlock.ColorIndexes[subBlockIndex];
-                        var color = palette.Colors[indirectIndex];
-                        texture.Pixels[pixelIndex++] = color;
-                    }
-                }
-            }
-        }
-        return texture;
+        //int pixelIndex = 0;
+        //// Linearize texture pixels
+        //for (int v = 0; v < blocksCountVertical; v++)
+        //{
+        //    for (int y = 0; y < subBlockHeight; y++)
+        //    {
+        //        for (int h = 0; h < blocksCountHorizontal; h++)
+        //        {
+        //            // Which block we are sampling
+        //            int blockIndex = h + v * blocksCountHorizontal;
+        //            for (int x = 0; x < subBlockWidth; x++)
+        //            {
+        //                // Which sub-block we are sampling
+        //                int colorIndex = x + y * subBlockWidth;
+        //                var block = directBlocks[blockIndex];
+        //                var color = block.Colors[colorIndex];
+        //                texture.Pixels[pixelIndex++] = color;
+        //            }
+        //        }
+        //    }
+        //}
+        //return texture;
     }
 
     /// <summary>
@@ -546,8 +397,6 @@ public class Texture
 
         // Begin crop
         var cropped = new Texture(pixelWidth, pixelHeight, sourceTexture.Format);
-        cropped.Blocks = sourceTexture.Blocks;
-
         for (int y = 0; y < cropped.Height; y++)
         {
             int sourceY = originY + y;
@@ -587,40 +436,108 @@ public class Texture
         }
     }
 
-    // 2023/07/08: make simple functions for read/write
-    public static Texture ReadDirectColorTexture(EndianBinaryReader reader, TextureFormat directFormat, int pxWidth, int pxHeight)
+
+    public static Texture ReadDirectColorTexture(EndianBinaryReader reader, DirectTextureFormat directFormat, int pxWidth, int pxHeight)
     {
-        DirectEncoding encoding = DirectEncoding.GetEncoding(directFormat);
-        int blocksWidth = (int)MathF.Ceiling(pxWidth / encoding.Width);
-        int blocksHeight = (int)MathF.Ceiling(pxHeight / encoding.Height);
-        int blocksCount = blocksWidth * blocksHeight;
-        DirectBlock[] directBlocks = encoding.ReadBlocks<DirectBlock>(reader, encoding, blocksCount);
-        Texture texture = FromDirectBlocks(directBlocks, blocksWidth, blocksHeight);
+        directFormat.Validate();
+        DirectEncoding directEncoding = DirectEncoding.MapFormatToEncoding[directFormat];
+        BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, directEncoding);
+        DirectBlock[] directBlocks = directEncoding.ReadBlocks(reader, blocks.Count);
+        Texture texture = FromDirectBlocks(directBlocks, blocks.CountX, blocks.CountY);
         return texture;
     }
-    public static Texture ReadIndirectColorTexture(EndianBinaryReader reader, Palette palette, TextureFormat colorIndexFormat, int pxWidth, int pxHeight)
+
+    public static Texture ReadIndirectColorTexture(EndianBinaryReader reader, IndirectTextureFormat indexFormat, Palette palette, int pxWidth, int pxHeight)
     {
-        IndirectEncoding encoding = IndirectEncoding.GetEncoding(colorIndexFormat);
-        int blocksWidth = (int)MathF.Ceiling(pxWidth / encoding.BlockWidth);
-        int blocksHeight = (int)MathF.Ceiling(pxHeight / encoding.BlockHeight);
-        int blocksCount = blocksWidth * blocksHeight;
-        IndirectBlock[] blocks = encoding.ReadBlocks<IndirectBlock>(reader, encoding, blocksCount);
-        Texture texture = FromIndirectBlocksAndPalette(blocks, blocksWidth, blocksHeight, palette);
+        indexFormat.Validate();
+        IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[indexFormat];
+        BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, indirectEncoding);
+        IndirectBlock[] indirectBlocks = indirectEncoding.ReadBlocks(reader, blocks.Count);
+        Texture texture = FromIndirectBlocksAndPalette(indirectBlocks, blocks.CountX, blocks.CountY, palette);
         return texture;
     }
-    public static void WriteDirectColorTexture(EndianBinaryWriter writer, Texture texture, TextureFormat directFormat)
+
+    public static void WriteDirectColorTexture(EndianBinaryWriter writer, Texture texture, DirectTextureFormat directFormat)
     {
-        DirectEncoding encoding = DirectEncoding.GetEncoding(directFormat);
-        DirectBlock[] blocks = CreateDirectColorBlocksFromTexture(texture, encoding);
-        encoding.WriteBlocks(writer, blocks);
+        DirectEncoding directEncoding = DirectEncoding.MapFormatToEncoding[directFormat];
+        DirectBlock[] directBlocks = CreateDirectColorBlocksFromTexture(texture, directEncoding);
+        foreach (DirectBlock directBlock in directBlocks)
+            directEncoding.WriteBlock(writer, directBlock);
     }
-    public static void WriteIndirectColorTexture(EndianBinaryWriter writer, Texture texture, TextureFormat indirectFormat, TextureFormat paletteFormat)
+
+    public static (IndirectBlock[] indirectBlocks, Palette palette) QuantizeTexture(Texture texture, PaletteColorFormat colorFormat, IndirectEncoding indirectEncoding)
     {
-        IndirectEncoding encoding = IndirectEncoding.GetEncoding(indirectFormat);
-        IndirectBlock[] blocks = CreateIndirectColorBlocksAndPaletteFromTexture(texture, encoding, paletteFormat, out Palette palette, out _, out _);
-        palette.WritePalette(writer, encoding);
-        encoding.WriteBlocks(writer, blocks);
+        //// TODO: quantize texture 
+        //TextureColor[] paletteColors = [];
+        //ushort[] textureIndexes = [];
+
+        //// Create palettes from quantized data
+        //Palette palette = new(colorFormat, indirectEncoding, paletteColors);
+
+        //// TODO: loop over texture, extracting the appropriate strides
+        //// for x,y
+        //IndirectBlock indirectBlock = new(indirectEncoding)
+        //{
+        //    ColorIndexes = [],
+        //};
+
+        //// then return array of indirect blocks
+        //throw new NotImplementedException();
+
+        // limitations of image sharp
+        if (indirectEncoding.MaxPaletteSize > 256)
+        {
+            throw new NotImplementedException();
+        }
+
+        // init some settings
+        var configuration = new Configuration() { };
+        var quantizerOptions = new QuantizerOptions()
+        {
+            MaxColors = indirectEncoding.MaxPaletteSize,
+        }; // See also: dithers
+        var quantizer = new WuQuantizer(quantizerOptions);
+        var rgba32Quantizer = quantizer.CreatePixelSpecificQuantizer<Rgba32>(configuration);
+
+        // build palette and indices
+        var image = ToImage(texture);
+        var frame = image.Frames.RootFrame;
+        var indexedImageFrame = rgba32Quantizer.BuildPaletteAndQuantizeFrame(frame, frame.Bounds());
+
+        // PALETTE
+        Rgba32[] paletteColorsRGBA32 = indexedImageFrame.Palette.ToArray();
+        TextureColor[] paletteColors = new TextureColor[paletteColorsRGBA32.Length];
+        for (int i = 0; i < paletteColorsRGBA32.Length; i++)
+            paletteColors[i] = new TextureColor(paletteColorsRGBA32[i].PackedValue);
+        Palette palette = new Palette(colorFormat, null, paletteColors);
+
+        // INDEXES
+        int stride = image.Width;
+        int capacity = image.Width * image.Height;
+        ushort[] indexes = new ushort[capacity];
+        for (int y = 0; y < image.Height; y++)
+        {
+            int originY = y * stride;
+            var row = indexedImageFrame.GetWritablePixelRowSpanUnsafe(y);
+            for (int x = 0; x < image.Width; x++)
+            {
+                int index = x + originY;
+                indexes[index] = row[x];
+            }
+        }
     }
+
+    public static void WriteIndirectColorTexture(EndianBinaryWriter writer, Texture texture, IndirectTextureFormat indirectFormat, PaletteColorFormat paletteFormat)
+    {
+        IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[indirectFormat];
+        (IndirectBlock[] indirectBlocks, Palette palette) =
+            CreateIndirectColorBlocksAndPaletteFromTexture(texture, indirectEncoding, paletteFormat);
+        foreach (IndirectBlock indirectBlock in indirectBlocks)
+            indirectEncoding.WriteBlock(writer, indirectBlock);
+    }
+
+
+
 
 
     /// <summary>
@@ -645,44 +562,15 @@ public class Texture
         return mipmapCount;
     }
 
-    public byte[] GetRawBytes(TextureFormat textureFormat)
+
+    public byte[] GetRawBytes(DirectTextureFormat directTextureFormat)
     {
         var memoryStream = new System.IO.MemoryStream();
         using var writer = new EndianBinaryWriter(memoryStream, Endianness.BigEndian);
-        Texture.WriteDirectColorTexture(writer, this, textureFormat);
+        WriteDirectColorTexture(writer, this, directTextureFormat);
         byte[] rawData = memoryStream.ToArray();
         return rawData;
     }
 
 
-
-
-
-
-
-
-
-
-
-    // NEW STUFF
-
-    public static IndirectBlock[] QuantizeTexture(Texture texture, PaletteColorFormat colorFormat, IndirectEncoding indirectEncoding)
-    {
-        // TODO: quantize texture 
-        TextureColor[] paletteColors = [];
-        ushort[] textureIndexes = [];
-
-        // Create palettes from quantized data
-        Palette palette = new(colorFormat, indirectEncoding, paletteColors);
-
-        // TODO: loop over texture, extracting the appropriate strides
-        // for x,y
-        IndirectBlock indirectBlock = new(indirectEncoding, palette)
-        {
-            ColorIndexes = [],
-        };
-
-        // then return array of indirect blocks
-        throw new NotImplementedException();
-    }
 }

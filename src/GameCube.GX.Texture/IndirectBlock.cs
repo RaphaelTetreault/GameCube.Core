@@ -13,7 +13,7 @@ public record class IndirectBlock
     /// <summary>
     ///     
     /// </summary>
-    public Palette Palette { get; init; }
+    //public Palette Palette { get; init; }
 
     /// <summary>
     ///     This block's indirect colour indexes.
@@ -31,10 +31,10 @@ public record class IndirectBlock
     public ushort this[int i] { get => ColorIndexes[i]; set => ColorIndexes[i] = value; }
 
 
-    public IndirectBlock(IndirectEncoding indirectEncoding, Palette palette)
+    public IndirectBlock(IndirectEncoding indirectEncoding, ushort[] colorIndexes)//, Palette palette)
     {
         IndirectEncoding = indirectEncoding;
-        Palette = palette;
+        //Palette = palette;
         ColorIndexes = new ushort[indirectEncoding.MaxPaletteSize];
     }
 }

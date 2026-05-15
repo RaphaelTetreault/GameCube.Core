@@ -40,13 +40,13 @@ public record class DirectBlock
     { 
         get
         {
-            int index = x + y * DirectEncoding.Width;
+            int index = x + y * DirectEncoding.BlockWidth;
             TextureColor color = Colors[index];
             return color;
         }
         set
         {
-            int index = x + y * DirectEncoding.Width;
+            int index = x + y * DirectEncoding.BlockWidth;
             Colors[index] = value;
         }
     }
