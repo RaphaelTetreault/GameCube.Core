@@ -30,11 +30,14 @@ public record class IndirectBlock
     /// </returns>
     public ushort this[int i] { get => ColorIndexes[i]; set => ColorIndexes[i] = value; }
 
+    public IndirectBlock(IndirectEncoding indirectEncoding)
+    {
+        IndirectEncoding = indirectEncoding;
+    }
 
     public IndirectBlock(IndirectEncoding indirectEncoding, ushort[] colorIndexes)//, Palette palette)
     {
         IndirectEncoding = indirectEncoding;
-        //Palette = palette;
         ColorIndexes = new ushort[indirectEncoding.MaxPaletteSize];
     }
 }
