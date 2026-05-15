@@ -208,7 +208,7 @@ public class Texture
         IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[indexFormat];
         BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, indirectEncoding);
         IndirectBlock[] indirectBlocks = indirectEncoding.ReadBlocks(reader, blocks.Count);
-        Texture texture = FromIndirectBlocksAndPalette(indirectBlocks, blocks.CountX, blocks.CountY, palette);
+        Texture texture = FromIndirectBlocksAndPalette(indirectBlocks, palette, blocks.CountX, blocks.CountY);
         return texture;
     }
 
@@ -315,7 +315,7 @@ public class Texture
         return (blocks, palette);
     }
     public static (IndirectBlock[] blocks, Palette palette) CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, IndirectEncoding indirectEncoding, PaletteColorFormat paletteFormat)
-        => CreateIndirectColorBlocksAndPaletteFromTexture(texture, indirectEncoding, paletteFormat);
+        => CreateIndirectColorBlocksAndPaletteFromTexture(texture, indirectEncoding, paletteFormat, out _);
 
     private static Image<Rgba32> ToImage(Texture sourceTexture)
     {
@@ -429,7 +429,7 @@ public class Texture
         throw new NotImplementedException();
     }
 
-    public static Texture FromIndirectBlocks(IndirectBlock[] directBlocks, Palette palette, int blocksCountHorizontal, int blocksCountVertical)
+    public static Texture FromIndirectBlocksAndPalette(IndirectBlock[] directBlocks, Palette palette, int blocksCountHorizontal, int blocksCountVertical)
     {
         int numBlocks = blocksCountHorizontal * blocksCountVertical;
         if (numBlocks != directBlocks.Length)
@@ -520,7 +520,7 @@ public class Texture
             int dy = destinationOriginY + y;
             for (int x = 0; x < sourceTexture.Width; x++)
             {
-                int dx = destinationOriginX + x; ;
+                int dx = destinationOriginX + x;
                 destinationTexture[dx, dy] = sourceTexture[x, y];
             }
         }
@@ -535,6 +535,7 @@ public class Texture
     /// </summary>
     /// <param name="width">Texture width in pixels.</param>
     /// <param name="height">Texture height in pixels.</param>
+    /// <param name="minMipmapPixelSize">Minimum dimension in pixels (x or y) where mipmap generation ends.</param>
     /// <returns>
     ///     Max number of valid mipmaps for the specified size.
     /// </returns>
@@ -550,13 +551,21 @@ public class Texture
         return mipmapCount;
     }
 
-
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="directTextureFormat"></param>
+    /// <returns>
+    ///     
+    /// </returns>
     public byte[] GetRawBytes(DirectTextureFormat directTextureFormat)
     {
         var memoryStream = new System.IO.MemoryStream();
         using var writer = new EndianBinaryWriter(memoryStream, Endianness.BigEndian);
         WriteDirectColorTexture(writer, this, directTextureFormat);
+        writer.Flush();
         byte[] rawData = memoryStream.ToArray();
+        writer.Close();
         return rawData;
     }
 
