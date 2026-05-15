@@ -15,6 +15,8 @@ namespace GameCube.GX.Texture;
 /// </remarks>
 public class Texture
 {
+    public readonly record struct BlockOrigin(int X, int Y);
+
     /// <summary>
     ///     The texture's format.
     /// </summary>
@@ -168,8 +170,6 @@ public class Texture
         return copy;
     }
 
-
-    public readonly record struct BlockOrigin(int X, int Y);
     public static BlockOrigin[] GetBlockOrigins(Texture texture, IEncoding encoding)
     {
         // Get info
@@ -191,9 +191,6 @@ public class Texture
 
         return origins;
     }
-
-
-
 
     public static Texture ReadDirectColorTexture(EndianBinaryReader reader, DirectTextureFormat directFormat, int pxWidth, int pxHeight)
     {
