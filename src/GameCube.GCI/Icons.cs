@@ -13,8 +13,9 @@ public class Icons
     public const int IconWidth = 32;
     public const int IconHeight = 32;
     public const int MaxIcons = 8;
-    public const TextureFormat DirectFormat = TextureFormat.RGB5A3;
-    public const TextureFormat IndirectFormat = TextureFormat.CI8;
+    public const DirectTextureFormat DirectColorFormat = DirectTextureFormat.RGB5A3;
+    public const IndirectTextureFormat IndirectIndexFormat = IndirectTextureFormat.CI8;
+    public const PaletteColorFormat PaletteColorFormat = PaletteColorFormat.RGB5A3;
 
     // FIELDS
     private GciTextureFormat iconFormat;
@@ -36,7 +37,7 @@ public class Icons
         if (iconFormat == GciTextureFormat.DirectColor)
         {
             for (int i = 0; i < iconCount; i++)
-                iconTextures[i] = Texture.ReadDirectColorTexture(reader, DirectFormat, IconWidth, IconHeight);
+                iconTextures[i] = Texture.ReadDirectColorTexture(reader, DirectColorFormat, IconWidth, IconHeight);
         }
         // INDIRECT COLOR
         else if (iconFormat == GciTextureFormat.IndirectColor)
@@ -44,10 +45,9 @@ public class Icons
             // SHARED PALETTE
             if (iconPalette == GciPalette.Shared)
             {
-                Palette palette = Palette.CreatePalette(DirectFormat);
-                palette.ReadPaletteColors(reader, IndirectFormat);
+                Palette palette = Palette.Read(reader, PaletteColorFormat, IndirectIndexFormat);
                 for (int i = 0; i < iconCount; i++)
-                    iconTextures[i] = Texture.ReadIndirectColorTexture(reader, palette, IndirectFormat, IconWidth, IconHeight);
+                    iconTextures[i] = Texture.ReadIndirectColorTexture(reader, IndirectIndexFormat, palette, IconWidth, IconHeight);
             }
             // UNIQUE PALETTES
             else if (iconPalette == GciPalette.Unique)
@@ -55,9 +55,8 @@ public class Icons
                 Palette[] palettes = new Palette[iconCount];
                 for (int i = 0; i < iconCount; i++)
                 {
-                    palettes[i] = Palette.CreatePalette(DirectFormat);
-                    palettes[i].ReadPaletteColors(reader, IndirectFormat);
-                    iconTextures[i] = Texture.ReadIndirectColorTexture(reader, palettes[i], IndirectFormat, IconWidth, IconHeight);
+                    palettes[i] = Palette.Read(reader, PaletteColorFormat, IndirectIndexFormat);
+                    iconTextures[i] = Texture.ReadIndirectColorTexture(reader, IndirectIndexFormat, palettes[i], IconWidth, IconHeight);
                 }
             }
         }
@@ -79,7 +78,7 @@ public class Icons
             for (int i = 0; i < iconCount; i++)
             {
                 Texture icon = iconTextures[i];
-                Texture.WriteDirectColorTexture(writer, icon, DirectFormat);
+                Texture.WriteDirectColorTexture(writer, icon, DirectColorFormat);
             }
         }
         // INDIRECT COLOR
@@ -96,7 +95,7 @@ public class Icons
                     Texture icon = iconTextures[i];
                     Texture.Copy(icon, combinedIcons, 0, originY);
                 }
-                Texture.WriteIndirectColorTexture(writer, combinedIcons, IndirectFormat, DirectFormat);
+                Texture.WriteIndirectColorTexture(writer, combinedIcons, IndirectIndexFormat, PaletteColorFormat);
             }
             // UNIQUE PALETTES
             else if (iconPalette == GciPalette.Unique)
@@ -104,7 +103,7 @@ public class Icons
                 for (int i = 0; i < iconTextures.Length; i++)
                 {
                     Texture icon = iconTextures[i];
-                    Texture.WriteIndirectColorTexture(writer, icon, IndirectFormat, DirectFormat);
+                    Texture.WriteIndirectColorTexture(writer, icon, IndirectIndexFormat, PaletteColorFormat);
                 }
             }
         }

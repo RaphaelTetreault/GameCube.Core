@@ -20,11 +20,6 @@ public class Texture
     public readonly record struct BlockOrigin(int X, int Y);
 
     /// <summary>
-    ///     The texture's format.
-    /// </summary>
-    public TextureFormat Format { get; set; } = TextureFormat.RGBA8;
-
-    /// <summary>
     ///     The texture's pixel width.
     /// </summary>
     public int Width { get; private set; } = 0;
@@ -81,10 +76,8 @@ public class Texture
     /// </summary>
     /// <param name="width">The texture's pixel width.</param>
     /// <param name="height">The texture's pixel height.</param>
-    /// <param name="format">The texture's format.</param>
-    public Texture(int width, int height, TextureFormat format = TextureFormat.RGBA8)
+    public Texture(int width, int height)
     {
-        Format = format;
         Width = width;
         Height = height;
         Pixels = new TextureColor[Width * Height];
@@ -97,10 +90,8 @@ public class Texture
     /// <param name="width">The texture's pixel width.</param>
     /// <param name="height">The texture's pixel height.</param>
     /// <param name="color">The default colour of all pixels for the texture.</param>
-    /// <param name="format">The texture's format.</param>
-    public Texture(int width, int height, TextureColor color, TextureFormat format = TextureFormat.RGBA8)
+    public Texture(int width, int height, TextureColor color)
     {
-        Format = format;
         Width = width;
         Height = height;
         Pixels = new TextureColor[Width * Height];
@@ -171,7 +162,7 @@ public class Texture
         return copy;
     }
 
-    // TODO: move to BlocksInfo
+    // TODO: move to BlocksInfo ?
     public static BlockOrigin[] GetBlockOrigins(BlocksInfo blocksInfo)
     {
         // Create origin for each block within texture
@@ -200,7 +191,7 @@ public class Texture
         DirectEncoding directEncoding = DirectEncoding.MapFormatToEncoding[directFormat];
         BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, directEncoding);
         DirectBlock[] directBlocks = directEncoding.ReadBlocks(reader, blocks.BlockCount);
-        Texture texture = FromDirectBlocks(directBlocks, blocks.BlockCountX, blocks.BlockCountY);
+        Texture texture = FromDirectBlocks(directBlocks, blocks);
         return texture;
     }
 
@@ -216,6 +207,7 @@ public class Texture
 
     public static void WriteDirectColorTexture(EndianBinaryWriter writer, Texture texture, DirectTextureFormat directFormat)
     {
+        directFormat.Validate();
         DirectEncoding directEncoding = DirectEncoding.MapFormatToEncoding[directFormat];
         DirectBlock[] directBlocks = CreateDirectColorBlocksFromTexture(texture, directEncoding);
         foreach (DirectBlock directBlock in directBlocks)
@@ -224,8 +216,11 @@ public class Texture
 
     public static void WriteIndirectColorTexture(EndianBinaryWriter writer, Texture texture, IndirectTextureFormat indirectFormat, PaletteColorFormat paletteFormat)
     {
+        indirectFormat.Validate();
+        paletteFormat.Validate();
         IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[indirectFormat];
         (IndirectBlock[] indirectBlocks, Palette palette) = CreateIndirectColorBlocksAndPaletteFromTexture(texture, indirectEncoding, paletteFormat);
+        Palette.Write(writer, palette);
         foreach (IndirectBlock indirectBlock in indirectBlocks)
             indirectEncoding.WriteBlock(writer, indirectBlock);
     }
@@ -254,12 +249,12 @@ public class Texture
 
     public static (IndirectBlock[] blocks, Palette palette) CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, IndirectEncoding indirectEncoding, PaletteColorFormat paletteFormat, out BlocksInfo blocksInfo)
     {
+        paletteFormat.Validate();
         // limitations of image sharp
         if (indirectEncoding.MaxPaletteSize > 256)
         {
             throw new NotImplementedException();
         }
-
 
         // 
         blocksInfo = BlocksInfo.FromPixelDimensions(texture.Width, texture.Height, indirectEncoding);
@@ -267,7 +262,6 @@ public class Texture
         IndirectBlock[] blocks = new IndirectBlock[blocksInfo.BlockCount];
         //
         Assert.IsTrue(blocks.Length == blockOrigins.Length);
-
 
         // init some settings
         var configuration = new Configuration() { };
@@ -358,7 +352,6 @@ public class Texture
 
         var texture = new Texture
         {
-            Format = TextureFormat.RGBA8,
             Width = width,
             Height = height,
             Pixels = new TextureColor[numPixels]
@@ -391,7 +384,6 @@ public class Texture
 
         var texture = new Texture
         {
-            Format = TextureFormat.RGBA8,
             Width = width,
             Height = height,
             Pixels = new TextureColor[numPixels]
@@ -433,9 +425,8 @@ public class Texture
         ImmutableArray<TextureColor> texturePixels = DeswizzleBlocks(blocks, blocksInfo);
         Texture texture = new()
         {
-            Format = TextureFormat.RGBA8,
-            Width = blocksInfo.PixelCountX,
-            Height = blocksInfo.PixelCountY,
+            Width = blocksInfo.TexturePixelWidth,
+            Height = blocksInfo.TexturePixelHeight,
             Pixels = [.. texturePixels],
         };
         return texture;
@@ -459,9 +450,8 @@ public class Texture
         ImmutableArray<TextureColor> texturePixels = DeswizzleBlocks(blocks, blocksInfo);
         Texture texture = new()
         {
-            Format = TextureFormat.RGBA8,
-            Width = blocksInfo.PixelCountX,
-            Height = blocksInfo.PixelCountY,
+            Width = blocksInfo.TexturePixelWidth,
+            Height = blocksInfo.TexturePixelHeight,
             Pixels = [.. texturePixels],
         };
         return texture;
@@ -479,6 +469,36 @@ public class Texture
 
     public static ImmutableArray<TextureColor> DeswizzleBlocks(ReadOnlySpan<ImmutableArray<TextureColor>> blocks, BlocksInfo blocksInfo)
     {
+        ////TODO: This seems smart and doesn't use origins
+        //// Linearize texture pixels
+        //for (int h = 0; h < blocksInfo.BlockCountY; h++)
+        //{
+        //    for (int y = 0; y < blocksInfo.BlockPixelWidth; y++)
+        //    {
+        //        for (int w = 0; w < blocksInfo.BlockCountX; w++)
+        //        {
+        //            // Which block we are sampling
+        //            int blockIndex = w + h * blocksInfo.BlockCountX;
+        //            for (int x = 0; x < blocksInfo.BlockPixelWidth; x++)
+        //            {
+        //                // If we don't have this block, skip.
+        //                // This is kinda hacky, but useful for GFZ
+        //                if (blockIndex >= directBlocks.Length)
+        //                {
+        //                    pixelIndex++;
+        //                    continue;
+        //                }
+
+        //                // Which sub-block we are sampling
+        //                int colorIndex = x + y * blocksInfo.BlockPixelWidth;
+        //                var block = directBlocks[blockIndex];
+        //                var color = block.Colors[colorIndex];
+        //                texture.Pixels[pixelIndex++] = color;
+        //            }
+        //        }
+        //    }
+        //}
+
         // Get upper left corner (x,y) of each block in texture
         BlockOrigin[] blockOrigins = GetBlockOrigins(blocksInfo);
         // Create new array for fonal texture
@@ -504,7 +524,7 @@ public class Texture
                     {
                         // Compute src to dst indexes
                         int srcBlockPixelIndex = pixelIndexY + px;
-                        int dstTexturePixelIndex = blockOrigin.Y * blocksInfo.PixelCountX + blockOrigin.X + px;
+                        int dstTexturePixelIndex = blockOrigin.Y * blocksInfo.TexturePixelWidth + blockOrigin.X + px;
                         deswizzledPixels[dstTexturePixelIndex] = block[srcBlockPixelIndex];
                     }
                 }
@@ -557,7 +577,7 @@ public class Texture
         }
 
         // Begin crop
-        var cropped = new Texture(pixelWidth, pixelHeight, sourceTexture.Format);
+        var cropped = new Texture(pixelWidth, pixelHeight);
         for (int y = 0; y < cropped.Height; y++)
         {
             int sourceY = originY + y;
@@ -630,6 +650,7 @@ public class Texture
     /// </returns>
     public byte[] GetRawBytes(DirectTextureFormat directTextureFormat)
     {
+        directTextureFormat.Validate();
         var memoryStream = new System.IO.MemoryStream();
         using var writer = new EndianBinaryWriter(memoryStream, Endianness.BigEndian);
         WriteDirectColorTexture(writer, this, directTextureFormat);

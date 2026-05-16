@@ -472,7 +472,7 @@ public record class DirectEncoding : IEncoding
             for (int qx = 0; qx < 2; qx++)
             {
                 // Get the 4x4 pixel subset
-                var colors = Get4x4SubBlockColors(directBlock.Colors, qx, qy);
+                var colors = Get4x4SubBlockColors(directBlock.Colors.AsSpan(), qx, qy);
                 // Convert from own format into that used by BCnEncoder
                 ColorRgba32[] colors32 = new ColorRgba32[16];
                 for (int i = 0; i < 16; i++)
@@ -591,7 +591,7 @@ public record class DirectEncoding : IEncoding
     /// <returns>
     ///     
     /// </returns>
-    public static TextureColor[] Get4x4SubBlockColors(TextureColor[] colors, int qx, int qy)
+    public static TextureColor[] Get4x4SubBlockColors(ReadOnlySpan<TextureColor> colors, int qx, int qy)
     {
         // DXT1 sub-block is 4x4 inside the larger 8x8
         TextureColor[] subBlock = new TextureColor[16];

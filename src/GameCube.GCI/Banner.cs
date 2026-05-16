@@ -12,8 +12,9 @@ public class Banner
     // CONSTANTS
     public const int BannerWidth = 96;
     public const int BannerHeight = 32;
-    public const TextureFormat DirectFormat = TextureFormat.RGB5A3;
-    public const TextureFormat IndirectFormat = TextureFormat.CI8;
+    public const DirectTextureFormat DirectColorFormat = DirectTextureFormat.RGB5A3;
+    public const IndirectTextureFormat IndirectIndexFormat = IndirectTextureFormat.CI8;
+    public const PaletteColorFormat PaletteColorFormat = PaletteColorFormat.RGB5A3;
 
     // FIELDS
     private GciTextureFormat format;
@@ -28,14 +29,13 @@ public class Banner
         // DIRECT COLOR
         if (format == GciTextureFormat.DirectColor)
         {
-            texture = Texture.ReadDirectColorTexture(reader, DirectFormat, BannerWidth, BannerHeight);
+            texture = Texture.ReadDirectColorTexture(reader, DirectColorFormat, BannerWidth, BannerHeight);
         }
         // INDIRECT COLOR
         else if (format == GciTextureFormat.IndirectColor)
         {
-            Palette palette = Palette.CreatePalette(DirectFormat);
-            palette.ReadPaletteColors(reader, IndirectFormat);
-            texture = Texture.ReadIndirectColorTexture(reader, palette, IndirectFormat, BannerWidth, BannerHeight);
+            Palette palette = Palette.Read(reader, PaletteColorFormat, IndirectIndexFormat);
+            texture = Texture.ReadIndirectColorTexture(reader, IndirectIndexFormat, palette, BannerWidth, BannerHeight);
         }
 
         ValidateTexture();
@@ -48,12 +48,12 @@ public class Banner
         // DIRECT COLOR
         if (format == GciTextureFormat.DirectColor)
         {
-            Texture.WriteDirectColorTexture(writer, texture, DirectFormat);
+            Texture.WriteDirectColorTexture(writer, texture, DirectColorFormat);
         }
         // INDIRECT COLOR
         else if (format == GciTextureFormat.IndirectColor)
         {
-            Texture.WriteIndirectColorTexture(writer, texture, IndirectFormat, DirectFormat);
+            Texture.WriteIndirectColorTexture(writer, texture, IndirectIndexFormat, PaletteColorFormat);
         }
     }
 

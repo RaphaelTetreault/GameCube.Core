@@ -9,8 +9,8 @@ public readonly record struct BlocksInfo
     public int BlockCount { get; init; }
     public int BlockPixelWidth { get; init; }
     public int BlockPixelHeight { get; init; }
-    public int PixelCountX { get; init; }
-    public int PixelCountY { get; init; }
+    public int TexturePixelWidth { get; init; }
+    public int TexturePixelHeight { get; init; }
     public int PixelCount { get; init; }
 
     public static BlocksInfo FromPixelDimensions(int pxWidth, int pxHeight, IEncoding encoding)
@@ -26,17 +26,10 @@ public readonly record struct BlocksInfo
             BlockCount = blocksCount,
             BlockPixelWidth = encoding.BlockWidth,
             BlockPixelHeight = encoding.BlockHeight,
-            PixelCountX = pxWidth,
-            PixelCountY = pxWidth,
+            TexturePixelWidth = pxWidth,
+            TexturePixelHeight = pxWidth,
             PixelCount = pxCount,
         };
-        return blockSize;
-    }
-
-    public static BlocksInfo FromTexture(Texture texture)
-    {
-        IEncoding encoding = IEncoding.MapFormatToEncoding[texture.Format];
-        BlocksInfo blockSize = FromPixelDimensions(texture.Width, texture.Height, encoding);
         return blockSize;
     }
 }

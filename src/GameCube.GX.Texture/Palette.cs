@@ -33,13 +33,7 @@ public record class Palette
     /// <summary>
     ///     The colours used by this palette.
     /// </summary>
-    public required TextureColor[] Colors { get; init; }
-
-    /// <summary>
-    ///     
-    /// </summary>
-    public required WritePalette Write { get; init; }
-
+    public required ImmutableArray<TextureColor> Colors { get; init; }
 
     /// <summary>
     ///     
@@ -48,24 +42,43 @@ public record class Palette
     /// <returns>
     ///     
     /// </returns>
-    public TextureColor this[int i] { get => Colors[i]; set => Colors[i] = value; }
+    public TextureColor this[int i]
+    {
+        get => Colors[i];
+    }
 
 
     internal Palette() { }
 
 
     [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
-    public Palette(PaletteColorFormat colorFormat, IndirectEncoding indirectEncoding, TextureColor[] paletteValues)
+    public Palette(PaletteColorFormat colorFormat, IndirectEncoding indirectEncoding, ReadOnlySpan<TextureColor> paletteValues)
     {
         // Assign values
         ColorFormat = colorFormat;
         IndexFormat = indirectEncoding.IndirectFormat;
-        Colors = paletteValues;
+        Colors = ImmutableArray.Create(paletteValues);
         // Assert everything
         AssertPalette(this, indirectEncoding);
         // Assign write function if we are valid
-        Write = MapColorFormatToWrite[colorFormat];
+        //Write = MapColorFormatToWrite[colorFormat];
     }
+
+
+    public static Palette Read(EndianBinaryReader reader, PaletteColorFormat colorFormat, IndirectTextureFormat indexFormat)
+    {
+        IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[indexFormat];
+        ReadPalette readPalette = MapColorFormatToRead[colorFormat];
+        Palette palette = readPalette.Invoke(reader, indirectEncoding);
+        return palette;
+    }
+    public static void Write(EndianBinaryWriter writer, Palette palette)
+    {
+        IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[palette.IndexFormat];
+        WritePalette writePalette = MapColorFormatToWrite[palette.ColorFormat];
+        writePalette.Invoke(writer, indirectEncoding, palette);
+    }
+
 
     internal static void AssertPalette(Palette palette, IndirectEncoding indirectEncoding)
     {
@@ -96,8 +109,7 @@ public record class Palette
         {
             ColorFormat = PaletteColorFormat.IA8,
             IndexFormat = indirectEncoding.IndirectFormat,
-            Colors = colors,
-            Write = WriteIA8,
+            Colors = ImmutableArray.Create(colors),
         };
         AssertPalette(palette, indirectEncoding);
         return palette;
@@ -128,8 +140,7 @@ public record class Palette
         {
             ColorFormat = PaletteColorFormat.RGB565,
             IndexFormat = indirectEncoding.IndirectFormat,
-            Colors = colors,
-            Write = WriteRGB565,
+            Colors = ImmutableArray.Create(colors),
         };
         AssertPalette(palette, indirectEncoding);
         return palette;
@@ -160,8 +171,7 @@ public record class Palette
         {
             ColorFormat = PaletteColorFormat.RGB5A3,
             IndexFormat = indirectEncoding.IndirectFormat,
-            Colors = colors,
-            Write = WriteRGB5A3,
+            Colors = ImmutableArray.Create(colors),
         };
         AssertPalette(palette, indirectEncoding);
         return palette;
@@ -192,8 +202,7 @@ public record class Palette
         {
             ColorFormat = PaletteColorFormat.RGBA8,
             IndexFormat = indirectEncoding.IndirectFormat,
-            Colors = colors,
-            Write = WriteRGBA8,
+            Colors = ImmutableArray.Create(colors),
         };
         AssertPalette(palette, indirectEncoding);
         return palette;
