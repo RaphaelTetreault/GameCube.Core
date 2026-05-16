@@ -1,4 +1,6 @@
-﻿namespace GameCube.GX.Texture;
+﻿using System.Collections.Immutable;
+
+namespace GameCube.GX.Texture;
 
 /// <summary>
 ///     A colour block which is directly encoded using a pixel format.
@@ -13,7 +15,8 @@ public record class DirectBlock
     /// <summary>
     ///     This block's direct colours (pixels).
     /// </summary>
-    public readonly TextureColor[] Colors;
+    public readonly ImmutableArray<TextureColor> Colors;
+    //public readonly TextureColor[] Colors;
 
     /// <summary>
     ///     Indexer to get/set direct colour (pixel).
@@ -25,7 +28,7 @@ public record class DirectBlock
     public TextureColor this[int i] 
     { 
         get => Colors[i];
-        set => Colors[i] = value; 
+        //set => Colors[i] = value; 
     }
 
     /// <summary>
@@ -44,11 +47,11 @@ public record class DirectBlock
             TextureColor color = Colors[index];
             return color;
         }
-        set
-        {
-            int index = x + y * DirectEncoding.BlockWidth;
-            Colors[index] = value;
-        }
+        //set
+        //{
+        //    int index = x + y * DirectEncoding.BlockWidth;
+        //    Colors[index] = value;
+        //}
     }
 
     /// <summary>
@@ -69,6 +72,6 @@ public record class DirectBlock
                 $"{nameof(TextureColor)} was passed to be assigned.";
             throw new System.ArgumentException(msg);
         }
-        Colors = pixels;
+        Colors = ImmutableArray.Create(pixels);
     }
 }

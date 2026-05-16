@@ -65,7 +65,7 @@ public record class IndirectEncoding : IEncoding
     public IndirectBlock[] ReadBlocks(EndianBinaryReader reader, int pxWidth, int pxHeight)
     {
         BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, this);
-        IndirectBlock[] indirectBlocks = ReadBlocks(reader, blocks.Count);
+        IndirectBlock[] indirectBlocks = ReadBlocks(reader, blocks.BlockCount);
         return indirectBlocks;
     }
 

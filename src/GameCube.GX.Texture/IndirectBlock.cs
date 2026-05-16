@@ -1,4 +1,6 @@
-﻿namespace GameCube.GX.Texture;
+﻿using System.Collections.Immutable;
+
+namespace GameCube.GX.Texture;
 
 /// <summary>
 ///     A colour block which is indirectly encoded using a colour-indexing format.
@@ -11,14 +13,9 @@ public record class IndirectBlock
     public IndirectEncoding IndirectEncoding { get; init; }
 
     /// <summary>
-    ///     
-    /// </summary>
-    //public Palette Palette { get; init; }
-
-    /// <summary>
     ///     This block's indirect colour indexes.
     /// </summary>
-    public ushort[] ColorIndexes { get; init; }
+    public ImmutableArray<ushort> ColorIndexes { get; init; }
 
 
     /// <summary>
@@ -28,7 +25,11 @@ public record class IndirectBlock
     /// <returns>
     ///     Indirect colour at the specified index within this block.
     /// </returns>
-    public ushort this[int i] { get => ColorIndexes[i]; set => ColorIndexes[i] = value; }
+    public ushort this[int i]
+    {
+        get => ColorIndexes[i];
+        //set => ColorIndexes[i] = value;
+    }
 
     /// <summary>
     ///     
@@ -38,6 +39,6 @@ public record class IndirectBlock
     public IndirectBlock(IndirectEncoding indirectEncoding, ushort[] colorIndexes)
     {
         IndirectEncoding = indirectEncoding;
-        ColorIndexes = colorIndexes;
+        ColorIndexes = ImmutableArray.Create(colorIndexes);
     }
 }

@@ -95,7 +95,7 @@ public record class DirectEncoding : IEncoding
     public DirectBlock[] ReadBlocks(EndianBinaryReader reader, int pxWidth, int pxHeight)
     {
         BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, this);
-        DirectBlock[] directBlocks = ReadBlocks(reader, blocks.Count);
+        DirectBlock[] directBlocks = ReadBlocks(reader, blocks.BlockCount);
         return directBlocks;
     }
 

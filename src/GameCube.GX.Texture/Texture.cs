@@ -4,6 +4,8 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using SixLabors.ImageSharp.Processing.Processors.Dithering;
+using System.Collections.Immutable;
+using System.Linq;
 
 namespace GameCube.GX.Texture;
 
@@ -165,27 +167,27 @@ public class Texture
 
     public static TextureColor[] CopyArea(Texture texture, int srcOriginX, int srcOriginY, int dstWidth, int dstHeight)
     {
-        IEncoding encoding = IEncoding.MapFormatToEncoding[texture.Format];
-        TextureColor[] copy = CopyArea(texture.Pixels, texture.Width, texture.Height, srcOriginX, srcOriginY, encoding.BlockWidth, encoding.BlockHeight);
+        TextureColor[] copy = CopyArea(texture.Pixels, texture.Width, texture.Height, srcOriginX, srcOriginY, dstWidth, dstHeight);
         return copy;
     }
 
-    public static BlockOrigin[] GetBlockOrigins(Texture texture, IEncoding encoding)
+    // TODO: move to BlocksInfo
+    public static BlockOrigin[] GetBlockOrigins(BlocksInfo blocksInfo)
     {
-        // Get info
-        BlocksInfo blocksInfo = BlocksInfo.FromTexture(texture);
         // Create origin for each block within texture
-        BlockOrigin[] origins = new BlockOrigin[blocksInfo.Count];
+        BlockOrigin[] origins = new BlockOrigin[blocksInfo.BlockCount];
 
         // Iterate over each block
-        for (int y = 0; y < blocksInfo.CountY; y++)
+        int originIndex = 0;
+        for (int y = 0; y < blocksInfo.BlockCountY; y++)
         {
-            int originY = y * encoding.BlockHeight;
-            for (int x = 0; x < blocksInfo.CountX; x++)
+            int originY = y * blocksInfo.BlockPixelHeight;
+            for (int x = 0; x < blocksInfo.BlockCountX; x++)
             {
-                int originX = x * encoding.BlockWidth;
-                int originIndex = y * blocksInfo.CountX + x;
+                int originX = x * blocksInfo.BlockPixelWidth;
+                //int originIndex = y * blocksInfo.BlockCountX + x;
                 origins[originIndex] = new(originX, originY);
+                originIndex++;
             }
         }
 
@@ -197,8 +199,8 @@ public class Texture
         directFormat.Validate();
         DirectEncoding directEncoding = DirectEncoding.MapFormatToEncoding[directFormat];
         BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, directEncoding);
-        DirectBlock[] directBlocks = directEncoding.ReadBlocks(reader, blocks.Count);
-        Texture texture = FromDirectBlocks(directBlocks, blocks.CountX, blocks.CountY);
+        DirectBlock[] directBlocks = directEncoding.ReadBlocks(reader, blocks.BlockCount);
+        Texture texture = FromDirectBlocks(directBlocks, blocks.BlockCountX, blocks.BlockCountY);
         return texture;
     }
 
@@ -206,9 +208,9 @@ public class Texture
     {
         indexFormat.Validate();
         IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[indexFormat];
-        BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, indirectEncoding);
-        IndirectBlock[] indirectBlocks = indirectEncoding.ReadBlocks(reader, blocks.Count);
-        Texture texture = FromIndirectBlocksAndPalette(indirectBlocks, palette, blocks.CountX, blocks.CountY);
+        BlocksInfo blocksInfo = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, indirectEncoding);
+        IndirectBlock[] indirectBlocks = indirectEncoding.ReadBlocks(reader, blocksInfo.BlockCount);
+        Texture texture = FromIndirectBlocksAndPalette(indirectBlocks, palette, blocksInfo);
         return texture;
     }
 
@@ -223,8 +225,7 @@ public class Texture
     public static void WriteIndirectColorTexture(EndianBinaryWriter writer, Texture texture, IndirectTextureFormat indirectFormat, PaletteColorFormat paletteFormat)
     {
         IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[indirectFormat];
-        (IndirectBlock[] indirectBlocks, Palette palette) =
-            CreateIndirectColorBlocksAndPaletteFromTexture(texture, indirectEncoding, paletteFormat);
+        (IndirectBlock[] indirectBlocks, Palette palette) = CreateIndirectColorBlocksAndPaletteFromTexture(texture, indirectEncoding, paletteFormat);
         foreach (IndirectBlock indirectBlock in indirectBlocks)
             indirectEncoding.WriteBlock(writer, indirectBlock);
     }
@@ -233,8 +234,8 @@ public class Texture
     {
         // 
         blocksInfo = BlocksInfo.FromPixelDimensions(texture.Width, texture.Height, directEncoding);
-        BlockOrigin[] blockOrigins = GetBlockOrigins(texture, directEncoding);
-        DirectBlock[] blocks = new DirectBlock[blocksInfo.Count];
+        BlockOrigin[] blockOrigins = GetBlockOrigins(blocksInfo);
+        DirectBlock[] blocks = new DirectBlock[blocksInfo.BlockCount];
         //
         Assert.IsTrue(blocks.Length == blockOrigins.Length);
 
@@ -262,8 +263,8 @@ public class Texture
 
         // 
         blocksInfo = BlocksInfo.FromPixelDimensions(texture.Width, texture.Height, indirectEncoding);
-        BlockOrigin[] blockOrigins = GetBlockOrigins(texture, indirectEncoding);
-        IndirectBlock[] blocks = new IndirectBlock[blocksInfo.Count];
+        BlockOrigin[] blockOrigins = GetBlockOrigins(blocksInfo);
+        IndirectBlock[] blocks = new IndirectBlock[blocksInfo.BlockCount];
         //
         Assert.IsTrue(blocks.Length == blockOrigins.Length);
 
@@ -414,34 +415,104 @@ public class Texture
     /// <returns>
     ///     A new texture created from the source <paramref name="directBlocks"/>.
     /// </returns>
-    public static Texture FromDirectBlocks(DirectBlock[] directBlocks, int blocksCountHorizontal, int blocksCountVertical)
+    public static Texture FromDirectBlocks(DirectBlock[] directBlocks, BlocksInfo blocksInfo)
     {
-        int numBlocks = blocksCountHorizontal * blocksCountVertical;
-        if (numBlocks != directBlocks.Length)
+        // Sanity check
+        if (blocksInfo.BlockCount != directBlocks.Length)
         {
-            string msg =
-                $"Number of {nameof(DirectBlock)} does not match length " +
-                $"{nameof(blocksCountHorizontal)}*{nameof(blocksCountVertical)}.";
+            string msg = $"Number of blocks does not match length info.";
             throw new ArgumentException(msg);
         }
 
-        // Deswizzle
-        throw new NotImplementedException();
+        // Copy references of blocks from direct blocks
+        ImmutableArray<TextureColor>[] blocks = new ImmutableArray<TextureColor>[blocksInfo.BlockCount];
+        for (int i = 0; i < blocks.Length; i++)
+            blocks[i] = directBlocks[i].Colors;
+
+        // Construct texture from deswizzled blocks
+        ImmutableArray<TextureColor> texturePixels = DeswizzleBlocks(blocks, blocksInfo);
+        Texture texture = new()
+        {
+            Format = TextureFormat.RGBA8,
+            Width = blocksInfo.PixelCountX,
+            Height = blocksInfo.PixelCountY,
+            Pixels = [.. texturePixels],
+        };
+        return texture;
     }
 
-    public static Texture FromIndirectBlocksAndPalette(IndirectBlock[] directBlocks, Palette palette, int blocksCountHorizontal, int blocksCountVertical)
+    public static Texture FromIndirectBlocksAndPalette(IndirectBlock[] indirectBlocks, Palette palette, BlocksInfo blocksInfo)
     {
-        int numBlocks = blocksCountHorizontal * blocksCountVertical;
-        if (numBlocks != directBlocks.Length)
+        // Sanity check
+        if (blocksInfo.BlockCount != indirectBlocks.Length)
         {
-            string msg =
-                $"Number of {nameof(DirectBlock)} does not match length " +
-                $"{nameof(blocksCountHorizontal)}*{nameof(blocksCountVertical)}.";
+            string msg = $"Number of blocks does not match length info.";
             throw new ArgumentException(msg);
         }
 
-        // Deswizzle
-        throw new NotImplementedException();
+        // Construct pixels from indexes and pallete
+        ImmutableArray<TextureColor>[] blocks = new ImmutableArray<TextureColor>[blocksInfo.BlockCount];
+        for (int i = 0; i < blocks.Length; i++)
+            blocks[i] = IndirectBlocksAndPaletteToTextureColors(indirectBlocks[i], palette);
+
+        // Construct texture from deswizzled blocks
+        ImmutableArray<TextureColor> texturePixels = DeswizzleBlocks(blocks, blocksInfo);
+        Texture texture = new()
+        {
+            Format = TextureFormat.RGBA8,
+            Width = blocksInfo.PixelCountX,
+            Height = blocksInfo.PixelCountY,
+            Pixels = [.. texturePixels],
+        };
+        return texture;
+    }
+
+
+    public static ImmutableArray<TextureColor> IndirectBlocksAndPaletteToTextureColors(IndirectBlock indirectBlocks, Palette palette)
+    {
+        TextureColor[] colors = new TextureColor[indirectBlocks.ColorIndexes.Length];
+        for (int i = 0; i < colors.Length; i++)
+            colors[i] = palette.Colors[indirectBlocks.ColorIndexes[i]];
+        ImmutableArray<TextureColor> value = ImmutableArray.Create(colors);
+        return value;
+    }
+
+    public static ImmutableArray<TextureColor> DeswizzleBlocks(ReadOnlySpan<ImmutableArray<TextureColor>> blocks, BlocksInfo blocksInfo)
+    {
+        // Get upper left corner (x,y) of each block in texture
+        BlockOrigin[] blockOrigins = GetBlockOrigins(blocksInfo);
+        // Create new array for fonal texture
+        TextureColor[] deswizzledPixels = new TextureColor[blocksInfo.PixelCount];
+        // Copy pixels from blocks into correct position in texture
+        for (int by = 0; by < blocksInfo.BlockCountY; by++)
+        {
+            // Each Y down moves by stride (blocks X of texture)
+            int blockIndexY = by * blocksInfo.BlockCountX;
+            for (int bx = 0; bx < blocksInfo.BlockCountX; bx++)
+            {
+                // Get block and related info
+                int blockIndex = blockIndexY + bx;
+                BlockOrigin blockOrigin = blockOrigins[blockIndex];
+                ImmutableArray<TextureColor> block = blocks[blockIndex];
+                
+                // Loop over each pixel inside block
+                for (int py = 0; py < blocksInfo.BlockPixelHeight; py++)
+                {
+                    // Each Y down moves by stride (pixels X of block)
+                    int pixelIndexY = py * blocksInfo.BlockPixelWidth;
+                    for (int px = 0; px < blocksInfo.BlockPixelWidth; px++)
+                    {
+                        // Compute src to dst indexes
+                        int srcBlockPixelIndex = pixelIndexY + px;
+                        int dstTexturePixelIndex = blockOrigin.Y * blocksInfo.PixelCountX + blockOrigin.X + px;
+                        deswizzledPixels[dstTexturePixelIndex] = block[srcBlockPixelIndex];
+                    }
+                }
+            }
+        }
+        // Create immutable array of pixels
+        ImmutableArray<TextureColor> texturePixels = ImmutableArray.Create(deswizzledPixels);
+        return texturePixels;
     }
 
 
@@ -525,7 +596,6 @@ public class Texture
             }
         }
     }
-
 
 
     /// <summary>
