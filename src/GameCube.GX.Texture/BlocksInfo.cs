@@ -27,7 +27,7 @@ public readonly record struct BlocksInfo
             BlockPixelWidth = encoding.BlockWidth,
             BlockPixelHeight = encoding.BlockHeight,
             TexturePixelWidth = pxWidth,
-            TexturePixelHeight = pxWidth,
+            TexturePixelHeight = pxHeight,
             PixelCount = pxCount,
         };
         return blockSize;
