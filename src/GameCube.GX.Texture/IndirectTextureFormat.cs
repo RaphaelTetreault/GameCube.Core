@@ -1,6 +1,6 @@
 ﻿namespace GameCube.GX.Texture;
 
-public enum IndirectTextureFormat
+public enum IndirectTextureFormat : byte
 {
     /// <summary>
     ///     4-bit colour index. Accompanies with colour paletted.

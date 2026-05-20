@@ -1,6 +1,6 @@
 ﻿namespace GameCube.GX.Texture;
 
-public enum PaletteColorFormat
+public enum PaletteColorFormat : byte
 {
     /// <summary>
     ///     8-bit intensity (grayscale) with 8-bit alpha (translucent).

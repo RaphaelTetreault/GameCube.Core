@@ -1,6 +1,6 @@
 ﻿namespace GameCube.GX.Texture;
 
-public enum DirectTextureFormat
+public enum DirectTextureFormat : byte
 {
     /// <summary>
     ///     4-bit intensity (grayscale).
