@@ -469,6 +469,56 @@ public class Texture
 
     public static ImmutableArray<TextureColor> DeswizzleBlocks(ReadOnlySpan<ImmutableArray<TextureColor>> blocks, BlocksInfo blocksInfo)
     {
+        // GOAL: Linearize texture pixels.
+        // HOW: We will step through in this over to copy the top line of pixels from each block into the destination.
+        //      Example: 4x4 blocks, each block 8x8 pixels.
+        //      Loop over each block row (Y) of blocks, eg. loop through 4 blocks per Y row inside texture.
+        //      Loop over each pixel row (Y) in block,  eg. loop through 8 pixels per Y row inside block.
+        //      Loop over each block col (X) in blocks, eg. loop through 4 blocks per X column inside texture.
+        //      Loop over each pixel col (X) in block,  eg. loop through 8 pixels per X column inside block.
+
+        // Our pixels and which index we are currently copying into array.
+        TextureColor[] texture = new TextureColor[blocksInfo.BlockPixelCount];
+        int texturePixelIndex = 0;
+
+        // Iterate over each block row on Y axis, top to bottom
+        for (int blockY = 0; blockY < blocksInfo.BlockCountY; blockY++)
+        {
+            // Iterate over each pixel row on Y, top to bottom
+            for (int pixelY = 0; pixelY < blocksInfo.BlockPixelHeight; pixelY++)
+            {
+                // Convert Y 2D position to 1D stride inside blocks
+                int blockIndexY = blockY * blocksInfo.BlockCountX;
+                // Iterate over each block along X axis, left to right
+                for (int blockX = 0; blockX < blocksInfo.BlockCountX; blockX++)
+                {
+                    // Which pixel we are sampling
+                    int pixelIndexY = pixelY * blocksInfo.BlockPixelWidth;
+
+                    // Which block we are sampling
+                    int blockIndex = blockX + blockIndexY;
+                    // Iterate over each pixel in row, left to right
+                    for (int pixelX = 0; pixelX < blocksInfo.BlockPixelWidth; pixelX++)
+                    {
+                        // Which sub-block we are sampling
+                        int pixelIndex = pixelX + pixelIndexY;
+
+                        // Get block, get pixel from block, assign to texture pixels
+                        var block = blocks[blockIndex];
+                        var pixel = block[pixelIndex];
+                        texture[texturePixelIndex] = pixel;
+                        texturePixelIndex++;
+                    }
+                }
+            }
+        }
+
+        ImmutableArray<TextureColor> texturePixels = ImmutableArray.Create(texture);
+        return texturePixels;
+    }
+
+    public static ImmutableArray<TextureColor> DeswizzleBlocks2(ReadOnlySpan<ImmutableArray<TextureColor>> blocks, BlocksInfo blocksInfo)
+    {
         ////TODO: This seems smart and doesn't use origins
         //// Linearize texture pixels
         //for (int h = 0; h < blocksInfo.BlockCountY; h++)
@@ -502,7 +552,7 @@ public class Texture
         // Get upper left corner (x,y) of each block in texture
         BlockOrigin[] blockOrigins = GetBlockOrigins(blocksInfo);
         // Create new array for fonal texture
-        TextureColor[] deswizzledPixels = new TextureColor[blocksInfo.PixelCount];
+        TextureColor[] deswizzledPixels = new TextureColor[blocksInfo.TexturePixelCount];
         // Copy pixels from blocks into correct position in texture
         for (int by = 0; by < blocksInfo.BlockCountY; by++)
         {
