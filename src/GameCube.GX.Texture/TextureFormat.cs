@@ -68,6 +68,12 @@ public static class TextureFormatExtensions
     {
         public byte Byte => (byte)textureFormat;
 
+        /// <summary>
+        ///     
+        /// </summary>
+        /// <returns>
+        ///     
+        /// </returns>
         public DirectTextureFormat AsDirectTextureFormat()
         {
             DirectTextureFormat directTextureFormat = (DirectTextureFormat)textureFormat;
@@ -75,6 +81,12 @@ public static class TextureFormatExtensions
             return directTextureFormat;
         }
 
+        /// <summary>
+        ///     
+        /// </summary>
+        /// <returns>
+        ///     
+        /// </returns>
         public IndirectTextureFormat AsIndirectTextureFormat()
         {
             IndirectTextureFormat indirectTextureFormat = (IndirectTextureFormat)textureFormat;
@@ -82,6 +94,12 @@ public static class TextureFormatExtensions
             return indirectTextureFormat;
         }
 
+        /// <summary>
+        ///     
+        /// </summary>
+        /// <returns>
+        ///     
+        /// </returns>
         public PaletteColorFormat AsPaletteColorFormat()
         {
             PaletteColorFormat paletteColorFormat = (PaletteColorFormat)textureFormat;
@@ -89,6 +107,12 @@ public static class TextureFormatExtensions
             return paletteColorFormat;
         }
 
+        /// <summary>
+        ///     Ensure this enum has a valid value.
+        /// </summary>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if enum value is not defined.
+        /// </exception>
         public void Validate()
         {
             if (!System.Enum.IsDefined(textureFormat))

@@ -10,7 +10,7 @@ namespace GameCube.GX.Texture;
 /// <summary>
 ///     The base representation of a GameCube direct-colour texture format encoding.
 /// </summary>
-public record class DirectEncoding : IEncoding
+public record class DirectEncoding : IBlockEncoding
 {
     public delegate DirectBlock ReadDirectBlock(EndianBinaryReader reader);
     public delegate void WriteDirectBlock(EndianBinaryWriter writer, DirectBlock directBlock);
@@ -84,7 +84,14 @@ public record class DirectEncoding : IEncoding
     public int PixelsPerBlock => BlockWidth * BlockHeight;
 
 
-
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="blocksCount"></param>
+    /// <returns>
+    ///     
+    /// </returns>
     public DirectBlock[] ReadBlocks(EndianBinaryReader reader, int blocksCount)
     {
         DirectBlock[] directBlocks = new DirectBlock[blocksCount];
@@ -92,15 +99,32 @@ public record class DirectEncoding : IEncoding
             directBlocks[i] = ReadBlock.Invoke(reader);
         return directBlocks;
     }
+
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="pxWidth"></param>
+    /// <param name="pxHeight"></param>
+    /// <returns>
+    ///     
+    /// </returns>
     public DirectBlock[] ReadBlocks(EndianBinaryReader reader, int pxWidth, int pxHeight)
     {
-        BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, this);
+        TextureBlocksInfo blocks = TextureBlocksInfo.FromPixelDimensions(pxWidth, pxHeight, this);
         DirectBlock[] directBlocks = ReadBlocks(reader, blocks.BlockCount);
         return directBlocks;
     }
 
 
-
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="expected"></param>
+    /// <param name="value"></param>
+    /// <exception cref="ArgumentException">
+    ///     
+    /// </exception>
     internal static void AssertEncoding(DirectEncoding expected, DirectEncoding value)
     {
         // Assert types match
@@ -114,37 +138,37 @@ public record class DirectEncoding : IEncoding
 
     internal static DirectBlock ReadI4(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = I4;
-        TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = I4;
+        TextureColor[] pixels = new TextureColor[directEncoding.PixelsPerBlock];
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
             // Process 2 pixels per pass, high and low nybbles
-            for (int x = 0; x < DirectEncoding.BlockWidth; x += 2)
+            for (int x = 0; x < directEncoding.BlockWidth; x += 2)
             {
                 // Get 2 colors at a time from 1 byte
                 byte nybbles = reader.ReadByte();
                 (TextureColor color0, TextureColor color1) = TextureColor.FromI4(nybbles);
                 // Assign colors
-                int index0 = x + (y * DirectEncoding.BlockWidth);
+                int index0 = x + (y * directEncoding.BlockWidth);
                 int index1 = index0 + 1;
                 pixels[index0] = color0;
                 pixels[index1] = color1;
             }
         }
-        DirectBlock directBlock = new(DirectEncoding, pixels);
+        DirectBlock directBlock = new(directEncoding, pixels);
         return directBlock;
     }
 
     internal static void WriteI4(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = I4;
-        AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = I4;
+        AssertEncoding(directEncoding, directBlock.DirectEncoding);
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
             // Process 2 pixels per pass, set as high and low nybbles
-            for (int x = 0; x < DirectEncoding.BlockWidth; x += 2)
+            for (int x = 0; x < directEncoding.BlockWidth; x += 2)
             {
-                int index0 = x + (y * DirectEncoding.BlockWidth);
+                int index0 = x + (y * directEncoding.BlockWidth);
                 int index1 = index0 + 1;
                 TextureColor intensity0 = directBlock[index0];
                 TextureColor intensity1 = directBlock[index1];
@@ -156,31 +180,31 @@ public record class DirectEncoding : IEncoding
 
     internal static DirectBlock ReadI8(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = I8;
-        TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = I8;
+        TextureColor[] pixels = new TextureColor[directEncoding.PixelsPerBlock];
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
+            for (int x = 0; x < directEncoding.BlockWidth; x++)
             {
                 byte i8 = reader.ReadByte();
                 var color = new TextureColor(i8);
-                int index = x + (y * DirectEncoding.BlockWidth);
+                int index = x + (y * directEncoding.BlockWidth);
                 pixels[index] = color;
             }
         }
-        DirectBlock directBlock = new(DirectEncoding, pixels);
+        DirectBlock directBlock = new(directEncoding, pixels);
         return directBlock;
     }
 
     internal static void WriteI8(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = I8;
-        AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = I8;
+        AssertEncoding(directEncoding, directBlock.DirectEncoding);
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
+            for (int x = 0; x < directEncoding.BlockWidth; x++)
             {
-                int index = x + (y * DirectEncoding.BlockWidth);
+                int index = x + (y * directEncoding.BlockWidth);
                 var color = directBlock[index];
                 byte i8 = color.GetIntensity();
                 writer.Write(i8);
@@ -190,31 +214,31 @@ public record class DirectEncoding : IEncoding
 
     internal static DirectBlock ReadIA4(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = IA4;
-        TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = IA4;
+        TextureColor[] pixels = new TextureColor[directEncoding.PixelsPerBlock];
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
+            for (int x = 0; x < directEncoding.BlockWidth; x++)
             {
                 byte ia4 = reader.ReadByte();
                 var color = TextureColor.FromIA4(ia4);
-                int index = x + (y * DirectEncoding.BlockWidth);
+                int index = x + (y * directEncoding.BlockWidth);
                 pixels[index] = color;
             }
         }
-        DirectBlock directBlock = new(DirectEncoding, pixels);
+        DirectBlock directBlock = new(directEncoding, pixels);
         return directBlock;
     }
 
     internal static void WriteIA4(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = IA4;
-        AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = IA4;
+        AssertEncoding(directEncoding, directBlock.DirectEncoding);
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
+            for (int x = 0; x < directEncoding.BlockWidth; x++)
             {
-                int index = x + (y * DirectEncoding.BlockWidth);
+                int index = x + (y * directEncoding.BlockWidth);
                 var color = directBlock[index];
                 byte ia4 = TextureColor.ToIA4(color);
                 writer.Write(ia4);
@@ -224,31 +248,31 @@ public record class DirectEncoding : IEncoding
 
     internal static DirectBlock ReadIA8(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = IA8;
-        TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = IA8;
+        TextureColor[] pixels = new TextureColor[directEncoding.PixelsPerBlock];
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
+            for (int x = 0; x < directEncoding.BlockWidth; x++)
             {
                 ushort ia8 = reader.ReadUInt16();
                 var color = TextureColor.FromIA8(ia8);
-                int index = x + (y * DirectEncoding.BlockWidth);
+                int index = x + (y * directEncoding.BlockWidth);
                 pixels[index] = color;
             }
         }
-        DirectBlock directBlock = new(DirectEncoding, pixels);
+        DirectBlock directBlock = new(directEncoding, pixels);
         return directBlock;
     }
 
     internal static void WriteIA8(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = IA8;
-        AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = IA8;
+        AssertEncoding(directEncoding, directBlock.DirectEncoding);
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
+            for (int x = 0; x < directEncoding.BlockWidth; x++)
             {
-                int index = x + (y * DirectEncoding.BlockWidth);
+                int index = x + (y * directEncoding.BlockWidth);
                 var color = directBlock[index];
                 ushort ia8 = TextureColor.ToIA8(color);
                 writer.Write(ia8);
@@ -258,31 +282,31 @@ public record class DirectEncoding : IEncoding
 
     internal static DirectBlock ReadRGB565(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = RGB565;
-        TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = RGB565;
+        TextureColor[] pixels = new TextureColor[directEncoding.PixelsPerBlock];
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
+            for (int x = 0; x < directEncoding.BlockWidth; x++)
             {
                 ushort rgb565 = reader.ReadUInt16();
                 var color = TextureColor.FromRGB565(rgb565);
-                int index = x + (y * DirectEncoding.BlockWidth);
+                int index = x + (y * directEncoding.BlockWidth);
                 pixels[index] = color;
             }
         }
-        DirectBlock directBlock = new(DirectEncoding, pixels);
+        DirectBlock directBlock = new(directEncoding, pixels);
         return directBlock;
     }
 
     internal static void WriteRGB565(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = RGB565;
-        AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = RGB565;
+        AssertEncoding(directEncoding, directBlock.DirectEncoding);
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
+            for (int x = 0; x < directEncoding.BlockWidth; x++)
             {
-                int index = x + (y * DirectEncoding.BlockWidth);
+                int index = x + (y * directEncoding.BlockWidth);
                 var color = directBlock[index];
                 ushort rgb565 = TextureColor.ToRGB565(color);
                 writer.Write(rgb565);
@@ -292,31 +316,31 @@ public record class DirectEncoding : IEncoding
 
     internal static DirectBlock ReadRGB5A3(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = RGB5A3;
-        TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = RGB5A3;
+        TextureColor[] pixels = new TextureColor[directEncoding.PixelsPerBlock];
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
+            for (int x = 0; x < directEncoding.BlockWidth; x++)
             {
                 ushort rgb5a3 = reader.ReadUInt16();
                 var color = TextureColor.FromRGB5A3(rgb5a3);
-                int index = x + (y * DirectEncoding.BlockWidth);
+                int index = x + (y * directEncoding.BlockWidth);
                 pixels[index] = color;
             }
         }
-        DirectBlock directBlock = new(DirectEncoding, pixels);
+        DirectBlock directBlock = new(directEncoding, pixels);
         return directBlock;
     }
 
     internal static void WriteRGB5A3(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = RGB5A3;
-        AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        for (int y = 0; y < DirectEncoding.BlockHeight; y++)
+        DirectEncoding directEncoding = RGB5A3;
+        AssertEncoding(directEncoding, directBlock.DirectEncoding);
+        for (int y = 0; y < directEncoding.BlockHeight; y++)
         {
-            for (int x = 0; x < DirectEncoding.BlockWidth; x++)
+            for (int x = 0; x < directEncoding.BlockWidth; x++)
             {
-                int index = x + (y * DirectEncoding.BlockWidth);
+                int index = x + (y * directEncoding.BlockWidth);
                 var color = directBlock[index];
                 ushort rgb5a3 = TextureColor.ToRGB5A3(color);
                 writer.Write(rgb5a3);
@@ -326,28 +350,28 @@ public record class DirectEncoding : IEncoding
 
     internal static DirectBlock ReadRGBA8(EndianBinaryReader reader)
     {
-        DirectEncoding DirectEncoding = RGBA8;
-        TextureColor[] pixels = new TextureColor[DirectEncoding.PixelsPerBlock];
-        var bytes = reader.ReadBytes(DirectEncoding.BytesPerBlock);
+        DirectEncoding directEncoding = RGBA8;
+        TextureColor[] pixels = new TextureColor[directEncoding.PixelsPerBlock];
+        var bytes = reader.ReadBytes(directEncoding.BytesPerBlock);
         var a = ExtractRGBA8Bytes(bytes, 33);
         var r = ExtractRGBA8Bytes(bytes, 32);
         var g = ExtractRGBA8Bytes(bytes, 1);
         var b = ExtractRGBA8Bytes(bytes, 0);
         for (int i = 0; i < pixels.Length; i++)
             pixels[i] = new TextureColor(r[i], g[i], b[i], a[i]);
-        DirectBlock directBlock = new(DirectEncoding, pixels);
+        DirectBlock directBlock = new(directEncoding, pixels);
         return directBlock;
     }
 
     internal static void WriteRGBA8(EndianBinaryWriter writer, DirectBlock directBlock)
     {
-        DirectEncoding DirectEncoding = RGBA8;
-        AssertEncoding(DirectEncoding, directBlock.DirectEncoding);
-        var a = new byte[DirectEncoding.PixelsPerBlock];
-        var r = new byte[DirectEncoding.PixelsPerBlock];
-        var g = new byte[DirectEncoding.PixelsPerBlock];
-        var b = new byte[DirectEncoding.PixelsPerBlock];
-        for (int i = 0; i < DirectEncoding.PixelsPerBlock; i++)
+        DirectEncoding directEncoding = RGBA8;
+        AssertEncoding(directEncoding, directBlock.DirectEncoding);
+        var a = new byte[directEncoding.PixelsPerBlock];
+        var r = new byte[directEncoding.PixelsPerBlock];
+        var g = new byte[directEncoding.PixelsPerBlock];
+        var b = new byte[directEncoding.PixelsPerBlock];
+        for (int i = 0; i < directEncoding.PixelsPerBlock; i++)
         {
             var color = directBlock.Colors[i];
             a[i] = color.a;
@@ -355,7 +379,7 @@ public record class DirectEncoding : IEncoding
             g[i] = color.g;
             b[i] = color.b;
         }
-        var swizzledBytes = new byte[DirectEncoding.BytesPerBlock];
+        var swizzledBytes = new byte[directEncoding.BytesPerBlock];
         InterleaveRGBA8Bytes(a, 33, ref swizzledBytes);
         InterleaveRGBA8Bytes(r, 32, ref swizzledBytes);
         InterleaveRGBA8Bytes(g, 01, ref swizzledBytes);

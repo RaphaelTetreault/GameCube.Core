@@ -49,12 +49,26 @@ public static class DirectTextureFormatExtensions
     extension(DirectTextureFormat directTextureFormat)
     {
         public byte Byte => (byte)directTextureFormat;
+
+        /// <summary>
+        ///     
+        /// </summary>
+        /// <returns>
+        ///     
+        /// </returns>
         public TextureFormat AsTextureFormat()
         {
             TextureFormat textureFormat = (TextureFormat)directTextureFormat;
             textureFormat.Validate();
             return textureFormat;
         }
+
+        /// <summary>
+        ///     Ensure this enum has a valid value.
+        /// </summary>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if enum value is not defined.
+        /// </exception>
         public void Validate()
         {
             switch (directTextureFormat)

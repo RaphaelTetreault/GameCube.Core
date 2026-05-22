@@ -3,9 +3,9 @@
 namespace GameCube.GX.Texture;
 
 /// <summary>
-///     Information about texture storage as GX blocks.
+///     Texture information when stored as encoded blocks for GameCube GX GPU.
 /// </summary>
-public readonly record struct BlocksInfo
+public readonly record struct TextureBlocksInfo
 {
     /// <summary>
     ///     Number of blocks along X-axis (width, columns).
@@ -55,7 +55,17 @@ public readonly record struct BlocksInfo
     /// </summary>
     public int TexturePixelCount { get; init; }
 
-    public static BlocksInfo FromPixelDimensions(int pxWidth, int pxHeight, IEncoding encoding)
+    /// <summary>
+    ///     Create block information from texture size.
+    /// </summary>
+    /// <param name="pxWidth">Texture width in pixels.</param>
+    /// <param name="pxHeight">Texture height in pixels.</param>
+    /// <param name="encoding">Block encoding.</param>
+    /// <returns>
+    ///     Block information for texture of <paramref name="pxWidth"/> and 
+    ///     <paramref name="pxHeight"/> using <paramref name="encoding"/>.
+    /// </returns>
+    public static TextureBlocksInfo FromPixelDimensions(int pxWidth, int pxHeight, IBlockEncoding encoding)
     {
         // Compute how many blocks needed for texture dimensions
         int blocksCountX = (int)MathF.Ceiling((float)pxWidth / encoding.BlockWidth);
@@ -66,7 +76,7 @@ public readonly record struct BlocksInfo
         // Compute total pixels texture stores - can be less than above count for small textures.
         int pxCount = pxWidth * pxHeight;
 
-        BlocksInfo blockSize = new()
+        TextureBlocksInfo blockSize = new()
         {
             BlockCountX = blocksCountX,
             BlockCountY = blocksCountY,

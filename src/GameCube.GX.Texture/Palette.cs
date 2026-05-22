@@ -13,7 +13,7 @@ using System.Collections.Immutable;
 namespace GameCube.GX.Texture;
 
 /// <summary>
-///     The base representation for a GameCube indexed-colour palette.
+///     Representation for a GameCube indexed-colour palette.
 /// </summary>
 public record class Palette
 {
@@ -48,9 +48,18 @@ public record class Palette
     }
 
 
+    /// <summary>
+    ///     
+    /// </summary>
     internal Palette() { }
 
 
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="colorFormat"></param>
+    /// <param name="indirectEncoding"></param>
+    /// <param name="paletteValues"></param>
     [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
     public Palette(PaletteColorFormat colorFormat, IndirectEncoding indirectEncoding, ReadOnlySpan<TextureColor> paletteValues)
     {
@@ -60,11 +69,17 @@ public record class Palette
         Colors = ImmutableArray.Create(paletteValues);
         // Assert everything
         AssertPalette(this, indirectEncoding);
-        // Assign write function if we are valid
-        //Write = MapColorFormatToWrite[colorFormat];
     }
 
-
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="colorFormat"></param>
+    /// <param name="indexFormat"></param>
+    /// <returns>
+    ///     
+    /// </returns>
     public static Palette Read(EndianBinaryReader reader, PaletteColorFormat colorFormat, IndirectTextureFormat indexFormat)
     {
         IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[indexFormat];
@@ -72,6 +87,12 @@ public record class Palette
         Palette palette = readPalette.Invoke(reader, indirectEncoding);
         return palette;
     }
+
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="palette"></param>
     public static void Write(EndianBinaryWriter writer, Palette palette)
     {
         IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[palette.IndexFormat];
@@ -79,7 +100,14 @@ public record class Palette
         writePalette.Invoke(writer, indirectEncoding, palette);
     }
 
-
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="palette"></param>
+    /// <param name="indirectEncoding"></param>
+    /// <exception cref="ArgumentException">
+    ///     
+    /// </exception>
     internal static void AssertPalette(Palette palette, IndirectEncoding indirectEncoding)
     {
         // Ensure palette is in a valid color format
@@ -95,6 +123,14 @@ public record class Palette
         }
     }
 
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="indirectEncoding"></param>
+    /// <returns>
+    ///     
+    /// </returns>
     internal static Palette ReadIA8(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
     {
         // Read palette colors
@@ -115,9 +151,14 @@ public record class Palette
         return palette;
     }
 
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="indirectEncoding"></param>
+    /// <param name="palette"></param>
     internal static void WriteIA8(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
     {
-        AssertPalette(palette, indirectEncoding);
         // Write palette
         for (int i = 0; i < palette.Colors.Length; i++)
         {
@@ -126,6 +167,14 @@ public record class Palette
         }
     }
 
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="indirectEncoding"></param>
+    /// <returns>
+    ///     
+    /// </returns>
     internal static Palette ReadRGB565(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
     {
         // Read palette colors
@@ -146,9 +195,14 @@ public record class Palette
         return palette;
     }
 
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="indirectEncoding"></param>
+    /// <param name="palette"></param>
     internal static void WriteRGB565(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
     {
-        AssertPalette(palette, indirectEncoding);
         // Write palette
         for (int i = 0; i < palette.Colors.Length; i++)
         {
@@ -157,6 +211,14 @@ public record class Palette
         }
     }
 
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="indirectEncoding"></param>
+    /// <returns>
+    ///     
+    /// </returns>
     internal static Palette ReadRGB5A3(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
     {
         // Read palette colors
@@ -177,9 +239,14 @@ public record class Palette
         return palette;
     }
 
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="indirectEncoding"></param>
+    /// <param name="palette"></param>
     internal static void WriteRGB5A3(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
     {
-        AssertPalette(palette, indirectEncoding);
         // Write palette
         for (int i = 0; i < palette.Colors.Length; i++)
         {
@@ -188,6 +255,14 @@ public record class Palette
         }
     }
 
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="indirectEncoding"></param>
+    /// <returns>
+    ///     
+    /// </returns>
     internal static Palette ReadRGBA8(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
     {
         // Read palette colors
@@ -208,9 +283,14 @@ public record class Palette
         return palette;
     }
 
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="indirectEncoding"></param>
+    /// <param name="palette"></param>
     internal static void WriteRGBA8(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
     {
-        AssertPalette(palette, indirectEncoding);
         // Write palette
         for (int i = 0; i < palette.Colors.Length; i++)
         {
@@ -219,6 +299,9 @@ public record class Palette
         }
     }
 
+    /// <summary>
+    ///     
+    /// </summary>
     public static readonly ImmutableDictionary<PaletteColorFormat, ReadPalette> MapColorFormatToRead =
     [
         new(PaletteColorFormat.IA8, ReadIA8),
@@ -227,6 +310,9 @@ public record class Palette
         new(PaletteColorFormat.RGBA8, ReadRGBA8),
     ];
 
+    /// <summary>
+    ///     
+    /// </summary>
     public static readonly ImmutableDictionary<PaletteColorFormat, WritePalette> MapColorFormatToWrite =
     [
         new(PaletteColorFormat.IA8, WriteIA8),

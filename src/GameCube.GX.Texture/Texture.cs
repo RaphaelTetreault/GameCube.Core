@@ -163,7 +163,7 @@ public class Texture
     }
 
     // TODO: move to BlocksInfo ?
-    public static BlockOrigin[] GetBlockOrigins(BlocksInfo blocksInfo)
+    public static BlockOrigin[] GetBlockOrigins(TextureBlocksInfo blocksInfo)
     {
         // Create origin for each block within texture
         BlockOrigin[] origins = new BlockOrigin[blocksInfo.BlockCount];
@@ -189,7 +189,7 @@ public class Texture
     {
         directFormat.Validate();
         DirectEncoding directEncoding = DirectEncoding.MapFormatToEncoding[directFormat];
-        BlocksInfo blocks = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, directEncoding);
+        TextureBlocksInfo blocks = TextureBlocksInfo.FromPixelDimensions(pxWidth, pxHeight, directEncoding);
         DirectBlock[] directBlocks = directEncoding.ReadBlocks(reader, blocks.BlockCount);
         Texture texture = FromDirectBlocks(directBlocks, blocks);
         return texture;
@@ -199,7 +199,7 @@ public class Texture
     {
         indexFormat.Validate();
         IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[indexFormat];
-        BlocksInfo blocksInfo = BlocksInfo.FromPixelDimensions(pxWidth, pxHeight, indirectEncoding);
+        TextureBlocksInfo blocksInfo = TextureBlocksInfo.FromPixelDimensions(pxWidth, pxHeight, indirectEncoding);
         IndirectBlock[] indirectBlocks = indirectEncoding.ReadBlocks(reader, blocksInfo.BlockCount);
         Texture texture = FromIndirectBlocksAndPalette(indirectBlocks, palette, blocksInfo);
         return texture;
@@ -225,10 +225,10 @@ public class Texture
             indirectEncoding.WriteBlock(writer, indirectBlock);
     }
 
-    public static DirectBlock[] CreateDirectColorBlocksFromTexture(Texture texture, DirectEncoding directEncoding, out BlocksInfo blocksInfo)
+    public static DirectBlock[] CreateDirectColorBlocksFromTexture(Texture texture, DirectEncoding directEncoding, out TextureBlocksInfo blocksInfo)
     {
         // 
-        blocksInfo = BlocksInfo.FromPixelDimensions(texture.Width, texture.Height, directEncoding);
+        blocksInfo = TextureBlocksInfo.FromPixelDimensions(texture.Width, texture.Height, directEncoding);
         BlockOrigin[] blockOrigins = GetBlockOrigins(blocksInfo);
         DirectBlock[] blocks = new DirectBlock[blocksInfo.BlockCount];
         //
@@ -247,7 +247,7 @@ public class Texture
     public static DirectBlock[] CreateDirectColorBlocksFromTexture(Texture texture, DirectEncoding directEncoding)
         => CreateDirectColorBlocksFromTexture(texture, directEncoding, out _);
 
-    public static (IndirectBlock[] blocks, Palette palette) CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, IndirectEncoding indirectEncoding, PaletteColorFormat paletteFormat, out BlocksInfo blocksInfo)
+    public static (IndirectBlock[] blocks, Palette palette) CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, IndirectEncoding indirectEncoding, PaletteColorFormat paletteFormat, out TextureBlocksInfo blocksInfo)
     {
         paletteFormat.Validate();
         // limitations of image sharp
@@ -257,7 +257,7 @@ public class Texture
         }
 
         // 
-        blocksInfo = BlocksInfo.FromPixelDimensions(texture.Width, texture.Height, indirectEncoding);
+        blocksInfo = TextureBlocksInfo.FromPixelDimensions(texture.Width, texture.Height, indirectEncoding);
         BlockOrigin[] blockOrigins = GetBlockOrigins(blocksInfo);
         IndirectBlock[] blocks = new IndirectBlock[blocksInfo.BlockCount];
         //
@@ -407,7 +407,7 @@ public class Texture
     /// <returns>
     ///     A new texture created from the source <paramref name="directBlocks"/>.
     /// </returns>
-    public static Texture FromDirectBlocks(DirectBlock[] directBlocks, BlocksInfo blocksInfo)
+    public static Texture FromDirectBlocks(DirectBlock[] directBlocks, TextureBlocksInfo blocksInfo)
     {
         // Sanity check
         if (blocksInfo.BlockCount != directBlocks.Length)
@@ -432,7 +432,7 @@ public class Texture
         return texture;
     }
 
-    public static Texture FromIndirectBlocksAndPalette(IndirectBlock[] indirectBlocks, Palette palette, BlocksInfo blocksInfo)
+    public static Texture FromIndirectBlocksAndPalette(IndirectBlock[] indirectBlocks, Palette palette, TextureBlocksInfo blocksInfo)
     {
         // Sanity check
         if (blocksInfo.BlockCount != indirectBlocks.Length)
@@ -467,7 +467,7 @@ public class Texture
         return value;
     }
 
-    public static ImmutableArray<TextureColor> DeswizzleBlocks(ReadOnlySpan<ImmutableArray<TextureColor>> blocks, BlocksInfo blocksInfo)
+    public static ImmutableArray<TextureColor> DeswizzleBlocks(ReadOnlySpan<ImmutableArray<TextureColor>> blocks, TextureBlocksInfo blocksInfo)
     {
         // GOAL: Linearize texture pixels.
         // HOW: We will step through in this over to copy the top line of pixels from each block into the destination.
@@ -517,7 +517,7 @@ public class Texture
         return texturePixels;
     }
 
-    public static ImmutableArray<TextureColor> DeswizzleBlocks2(ReadOnlySpan<ImmutableArray<TextureColor>> blocks, BlocksInfo blocksInfo)
+    public static ImmutableArray<TextureColor> DeswizzleBlocks2(ReadOnlySpan<ImmutableArray<TextureColor>> blocks, TextureBlocksInfo blocksInfo)
     {
         ////TODO: This seems smart and doesn't use origins
         //// Linearize texture pixels

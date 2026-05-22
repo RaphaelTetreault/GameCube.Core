@@ -2,12 +2,12 @@
 
 namespace GameCube.GX.Texture;
 
-public interface IEncoding
+public interface IBlockEncoding
 {
     public byte BlockWidth { get; }
     public byte BlockHeight { get; }
 
-    public static readonly ImmutableDictionary<TextureFormat, IEncoding> MapFormatToEncoding =
+    public static readonly ImmutableDictionary<TextureFormat, IBlockEncoding> MapTextureFormatToBlockEncoding =
     [
         // DIRECT ENCODINGS
         new(TextureFormat.I4, DirectEncoding.I4),

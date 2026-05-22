@@ -23,12 +23,26 @@ public static class IndirectTextureFormatExtensions
     extension(IndirectTextureFormat indirectTextureFormat)
     {
         public byte Byte => (byte)indirectTextureFormat;
+
+        /// <summary>
+        ///     
+        /// </summary>
+        /// <returns>
+        ///     
+        /// </returns>
         public TextureFormat AsTextureFormat()
         {
             TextureFormat textureFormat = (TextureFormat)indirectTextureFormat;
             textureFormat.Validate();
             return textureFormat;
         }
+
+        /// <summary>
+        ///     Ensure this enum has a valid value.
+        /// </summary>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if enum value is not defined.
+        /// </exception>
         public void Validate()
         {
             switch (indirectTextureFormat)

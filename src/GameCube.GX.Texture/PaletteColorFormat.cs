@@ -29,12 +29,26 @@ public static class PaletteColorFormatExtensions
     extension(PaletteColorFormat paletteColorFormat)
     {
         public byte Byte => (byte)paletteColorFormat;
+
+        /// <summary>
+        ///     
+        /// </summary>
+        /// <returns>
+        ///     
+        /// </returns>
         public TextureFormat AsTextureFormat()
         {
             TextureFormat textureFormat = (TextureFormat)paletteColorFormat;
             textureFormat.Validate();
             return textureFormat;
         }
+
+        /// <summary>
+        ///     Ensure this enum has a valid value.
+        /// </summary>
+        /// <exception cref="System.ArgumentException">
+        ///     Thrown if enum value is not defined.
+        /// </exception>
         public void Validate()
         {
             switch (paletteColorFormat)

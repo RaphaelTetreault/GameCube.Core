@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 
 namespace GameCube.GX.Texture;
 
@@ -16,10 +17,9 @@ public record class DirectBlock
     ///     This block's direct colours (pixels).
     /// </summary>
     public readonly ImmutableArray<TextureColor> Colors;
-    //public readonly TextureColor[] Colors;
 
     /// <summary>
-    ///     Indexer to get/set direct colour (pixel).
+    ///     Indexer to get direct colour (pixel).
     /// </summary>
     /// <param name="i">The pixel's direct colour index in this block.</param>
     /// <returns>
@@ -28,11 +28,10 @@ public record class DirectBlock
     public TextureColor this[int i] 
     { 
         get => Colors[i];
-        //set => Colors[i] = value; 
     }
 
     /// <summary>
-    ///     Indexer to get/set direct colour (pixel).
+    ///     Indexer to get direct colour (pixel).
     /// </summary>
     /// <param name="x">The horizontal coordinate of the pixel in this block.</param>
     /// <param name="y">The vertical coordinate of the pixel in this block.</param>
@@ -47,11 +46,6 @@ public record class DirectBlock
             TextureColor color = Colors[index];
             return color;
         }
-        //set
-        //{
-        //    int index = x + y * DirectEncoding.BlockWidth;
-        //    Colors[index] = value;
-        //}
     }
 
     /// <summary>
@@ -63,15 +57,27 @@ public record class DirectBlock
         // Validate and assign encoding
         directEncoding.DirectFormat.Validate();
         DirectEncoding = directEncoding;
+        // Validate pixels according to encoding
+        AssertNumberOfPixels(directEncoding, pixels.Length);
+        Colors = ImmutableArray.Create(pixels);
+    }
 
-        // Make sure pixels map to encoding
-        if (pixels.Length != directEncoding.PixelsPerBlock)
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="directEncoding"></param>
+    /// <param name="pixelsLength"></param>
+    /// <exception cref="ArgumentException">
+    ///     
+    /// </exception>
+    internal static void AssertNumberOfPixels(DirectEncoding directEncoding, int pixelsLength)
+    {
+        // Assert pixel count
+        if (pixelsLength != directEncoding.PixelsPerBlock)
         {
             string msg = $"{nameof(DirectBlock)} encoding of {directEncoding.DirectFormat} " +
-                $"defines {directEncoding.PixelsPerBlock} pixels but an array of {pixels.Length} " +
-                $"{nameof(TextureColor)} was passed to be assigned.";
-            throw new System.ArgumentException(msg);
+                $"defines {directEncoding.PixelsPerBlock} pixels but an array of {pixelsLength}.";
+            throw new ArgumentException(msg);
         }
-        Colors = ImmutableArray.Create(pixels);
     }
 }
