@@ -113,6 +113,7 @@ public static class TextureFormatExtensions
         /// <exception cref="System.ArgumentException">
         ///     Thrown if enum value is not defined.
         /// </exception>
+        [System.Diagnostics.Conditional("DEBUG")]
         public void Validate()
         {
             if (!System.Enum.IsDefined(textureFormat))

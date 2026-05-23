@@ -16,7 +16,7 @@ public record class DirectBlock
     /// <summary>
     ///     This block's direct colours (pixels).
     /// </summary>
-    public readonly ImmutableArray<TextureColor> Colors;
+    public readonly ImmutableArray<TexturePixel> Colors;
 
     /// <summary>
     ///     Indexer to get direct colour (pixel).
@@ -25,7 +25,7 @@ public record class DirectBlock
     /// <returns>
     ///     Direct colour (pixel) at the specified index within this block.
     /// </returns>
-    public TextureColor this[int i] 
+    public TexturePixel this[int i] 
     { 
         get => Colors[i];
     }
@@ -38,12 +38,12 @@ public record class DirectBlock
     /// <returns>
     ///     Direct colour (pixel) at the specified coordinate within this block.
     /// </returns>
-    public TextureColor this[int x, int y]
+    public TexturePixel this[int x, int y]
     { 
         get
         {
-            int index = x + y * DirectEncoding.BlockWidth;
-            TextureColor color = Colors[index];
+            int index = x + y * DirectEncoding.BlockPixelWidth;
+            TexturePixel color = Colors[index];
             return color;
         }
     }
@@ -52,7 +52,7 @@ public record class DirectBlock
     ///     Construct a new direct colour block.
     /// </summary>
     /// <param name="directEncoding">The direct encoding to use for this block.</param>
-    public DirectBlock(DirectEncoding directEncoding, TextureColor[] pixels)
+    public DirectBlock(DirectEncoding directEncoding, TexturePixel[] pixels)
     {
         // Validate and assign encoding
         directEncoding.DirectFormat.Validate();
@@ -70,6 +70,7 @@ public record class DirectBlock
     /// <exception cref="ArgumentException">
     ///     
     /// </exception>
+    [System.Diagnostics.Conditional("DEBUG")]
     internal static void AssertNumberOfPixels(DirectEncoding directEncoding, int pixelsLength)
     {
         // Assert pixel count

@@ -68,11 +68,11 @@ public readonly record struct TextureBlocksInfo
     public static TextureBlocksInfo FromPixelDimensions(int pxWidth, int pxHeight, IBlockEncoding encoding)
     {
         // Compute how many blocks needed for texture dimensions
-        int blocksCountX = (int)MathF.Ceiling((float)pxWidth / encoding.BlockWidth);
-        int blocksCountY = (int)MathF.Ceiling((float)pxHeight / encoding.BlockHeight);
+        int blocksCountX = (int)MathF.Ceiling((float)pxWidth / encoding.BlockPixelWidth);
+        int blocksCountY = (int)MathF.Ceiling((float)pxHeight / encoding.BlockPixelHeight);
         int blocksCount = blocksCountX * blocksCountY;
         // Compute number of pixels the above blocks store
-        int blocksPixelCount = blocksCount * encoding.BlockWidth * encoding.BlockHeight;
+        int blocksPixelCount = blocksCount * encoding.BlockPixelWidth * encoding.BlockPixelHeight;
         // Compute total pixels texture stores - can be less than above count for small textures.
         int pxCount = pxWidth * pxHeight;
 
@@ -81,8 +81,8 @@ public readonly record struct TextureBlocksInfo
             BlockCountX = blocksCountX,
             BlockCountY = blocksCountY,
             BlockCount = blocksCount,
-            BlockPixelWidth = encoding.BlockWidth,
-            BlockPixelHeight = encoding.BlockHeight,
+            BlockPixelWidth = encoding.BlockPixelWidth,
+            BlockPixelHeight = encoding.BlockPixelHeight,
             BlockPixelCount = blocksPixelCount,
             TexturePixelWidth = pxWidth,
             TexturePixelHeight = pxHeight,

@@ -24,7 +24,7 @@ public record class IndirectBlock
     /// </summary>
     /// <param name="i">The pixel's indirect colour index.</param>
     /// <returns>
-    ///     Indirect colour at the specified index within this block.
+    ///     Indirect colour index at the specified index within this block.
     /// </returns>
     public ushort this[int i]
     {
@@ -37,23 +37,20 @@ public record class IndirectBlock
     /// <param name="x">The horizontal coordinate of the pixel in this block.</param>
     /// <param name="y">The vertical coordinate of the pixel in this block.</param>
     /// <returns>
-    ///     Indirect colour at the specified index within this block.
+    ///     Indirect colour index at the specified index within this block.
     /// </returns>
     public ushort this[int x, int y]
     {
         get
         {
-            int index = x + y * IndirectEncoding.BlockWidth;
+            int index = x + y * IndirectEncoding.BlockPixelWidth;
             ushort colorIndex = ColorIndexes[index];
             return colorIndex;
         }
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="indirectEncoding"></param>
-    /// <param name="colorIndexes"></param>
+    /// <param name="indirectEncoding">The <see cref="GX.Texture.IndirectEncoding"/> to use for this block.</param>
+    /// <param name="colorIndexes">The u16 color indexes to use for this block.</param>
     public IndirectBlock(IndirectEncoding indirectEncoding, ushort[] colorIndexes)
     {
         // Validate format
@@ -65,14 +62,7 @@ public record class IndirectBlock
         ColorIndexes = ImmutableArray.Create(colorIndexes);
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="indirectEncoding"></param>
-    /// <param name="indexesLength"></param>
-    /// <exception cref="ArgumentException">
-    ///     
-    /// </exception>
+    [System.Diagnostics.Conditional("DEBUG")]
     internal static void AssertIndexCount(IndirectEncoding indirectEncoding, int indexesLength)
     {
         // Assert index count
@@ -84,14 +74,7 @@ public record class IndirectBlock
         }
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="encoding"></param>
-    /// <param name="indirectBlock"></param>
-    /// <exception cref="OverflowException">
-    ///     
-    /// </exception>
+    [System.Diagnostics.Conditional("DEBUG")]
     internal static void AssertIndexValues(IndirectEncoding encoding, ReadOnlySpan<ushort> colorIndexes)
     {
         // Assert all indexes in block are within acceatable range

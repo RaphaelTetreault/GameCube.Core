@@ -1,12 +1,4 @@
-﻿// TODO: implement own quantization
-// https://en.wikipedia.org/wiki/Median_cut
-// https://en.wikipedia.org/wiki/K-means_clustering
-// And consider where dithering fits in?
-// https://en.wikipedia.org/wiki/Dither
-// https://en.wikipedia.org/wiki/Floyd%E2%80%93Steinberg_dithering
-// https://tannerhelland.com/2012/12/28/dithering-eleven-algorithms-source-code.html
-
-using Manifold.IO;
+﻿using Manifold.IO;
 using System;
 using System.Collections.Immutable;
 
@@ -33,35 +25,25 @@ public record class Palette
     /// <summary>
     ///     The colours used by this palette.
     /// </summary>
-    public required ImmutableArray<TextureColor> Colors { get; init; }
+    public required ImmutableArray<TexturePixel> Colors { get; init; }
 
     /// <summary>
-    ///     
+    ///     Indexer to get palette color.
     /// </summary>
-    /// <param name="i"></param>
-    /// <returns>
-    ///     
-    /// </returns>
-    public TextureColor this[int i]
+    /// <param name="i">Index into palette's colors.</param>
+    public TexturePixel this[int i]
     {
         get => Colors[i];
     }
 
 
-    /// <summary>
-    ///     
-    /// </summary>
     internal Palette() { }
 
-
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="colorFormat"></param>
-    /// <param name="indirectEncoding"></param>
-    /// <param name="paletteValues"></param>
+    /// <param name="colorFormat">The color format for this palette's colors.</param>
+    /// <param name="indirectEncoding">The indirect encoding used to index into this palette.</param>
+    /// <param name="paletteValues">The palette's colors.</param>
     [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
-    public Palette(PaletteColorFormat colorFormat, IndirectEncoding indirectEncoding, ReadOnlySpan<TextureColor> paletteValues)
+    public Palette(PaletteColorFormat colorFormat, IndirectEncoding indirectEncoding, ReadOnlySpan<TexturePixel> paletteValues)
     {
         // Assign values
         ColorFormat = colorFormat;
@@ -71,43 +53,38 @@ public record class Palette
         AssertPalette(this, indirectEncoding);
     }
 
+
     /// <summary>
-    ///     
+    ///     Read a new palette from <paramref name="reader"/>.
     /// </summary>
-    /// <param name="reader"></param>
-    /// <param name="colorFormat"></param>
-    /// <param name="indexFormat"></param>
+    /// <param name="reader">The binary reader to read from.</param>
+    /// <param name="colorFormat">Format of palette colors.</param>
+    /// <param name="indexFormat">Format of indexes into palette.</param>
     /// <returns>
-    ///     
+    ///     New palette constrcuted from <paramref name="reader"/> using the specified
+    ///     <paramref name="colorFormat"/> and <paramref name="indexFormat"/>.
     /// </returns>
     public static Palette Read(EndianBinaryReader reader, PaletteColorFormat colorFormat, IndirectTextureFormat indexFormat)
     {
-        IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[indexFormat];
+        IndirectEncoding indirectEncoding = IndirectEncoding.MapIndirectFormatToEncoding[indexFormat];
         ReadPalette readPalette = MapColorFormatToRead[colorFormat];
         Palette palette = readPalette.Invoke(reader, indirectEncoding);
         return palette;
     }
 
     /// <summary>
-    ///     
+    ///     Write an existing <paramref name="palette"/> to <paramref name="writer"/>.
     /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="palette"></param>
+    /// <param name="writer">The binary writer to write to.</param>
+    /// <param name="palette">The palette to write.</param>
     public static void Write(EndianBinaryWriter writer, Palette palette)
     {
-        IndirectEncoding indirectEncoding = IndirectEncoding.MapFormatToEncoding[palette.IndexFormat];
+        IndirectEncoding indirectEncoding = IndirectEncoding.MapIndirectFormatToEncoding[palette.IndexFormat];
         WritePalette writePalette = MapColorFormatToWrite[palette.ColorFormat];
         writePalette.Invoke(writer, indirectEncoding, palette);
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="palette"></param>
-    /// <param name="indirectEncoding"></param>
-    /// <exception cref="ArgumentException">
-    ///     
-    /// </exception>
+    [System.Diagnostics.Conditional("DEBUG")]
     internal static void AssertPalette(Palette palette, IndirectEncoding indirectEncoding)
     {
         // Ensure palette is in a valid color format
@@ -123,22 +100,14 @@ public record class Palette
         }
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <param name="indirectEncoding"></param>
-    /// <returns>
-    ///     
-    /// </returns>
     internal static Palette ReadIA8(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
     {
         // Read palette colors
-        TextureColor[] colors = new TextureColor[indirectEncoding.MaxPaletteSize];
+        TexturePixel[] colors = new TexturePixel[indirectEncoding.MaxPaletteSize];
         for (int i = 0; i < colors.Length; i++)
         {
             ushort ia8 = reader.ReadUInt16();
-            colors[i] = TextureColor.FromIA8(ia8);
+            colors[i] = TexturePixel.FromIA8(ia8);
         }
         // Construct palette
         Palette palette = new()
@@ -151,38 +120,24 @@ public record class Palette
         return palette;
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="indirectEncoding"></param>
-    /// <param name="palette"></param>
     internal static void WriteIA8(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
     {
         // Write palette
         for (int i = 0; i < palette.Colors.Length; i++)
         {
-            ushort ia8 = TextureColor.ToIA8(palette.Colors[i]);
+            ushort ia8 = TexturePixel.ToIA8(palette.Colors[i]);
             writer.Write(ia8);
         }
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <param name="indirectEncoding"></param>
-    /// <returns>
-    ///     
-    /// </returns>
     internal static Palette ReadRGB565(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
     {
         // Read palette colors
-        TextureColor[] colors = new TextureColor[indirectEncoding.MaxPaletteSize];
+        TexturePixel[] colors = new TexturePixel[indirectEncoding.MaxPaletteSize];
         for (int i = 0; i < colors.Length; i++)
         {
             ushort rgb565 = reader.ReadUInt16();
-            colors[i] = TextureColor.FromRGB565(rgb565);
+            colors[i] = TexturePixel.FromRGB565(rgb565);
         }
         // Construct palette
         Palette palette = new()
@@ -195,38 +150,24 @@ public record class Palette
         return palette;
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="indirectEncoding"></param>
-    /// <param name="palette"></param>
     internal static void WriteRGB565(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
     {
         // Write palette
         for (int i = 0; i < palette.Colors.Length; i++)
         {
-            ushort rgb565 = TextureColor.ToRGB565(palette.Colors[i]);
+            ushort rgb565 = TexturePixel.ToRGB565(palette.Colors[i]);
             writer.Write(rgb565);
         }
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <param name="indirectEncoding"></param>
-    /// <returns>
-    ///     
-    /// </returns>
     internal static Palette ReadRGB5A3(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
     {
         // Read palette colors
-        TextureColor[] colors = new TextureColor[indirectEncoding.MaxPaletteSize];
+        TexturePixel[] colors = new TexturePixel[indirectEncoding.MaxPaletteSize];
         for (int i = 0; i < colors.Length; i++)
         {
             ushort rgb5a3 = reader.ReadUInt16();
-            colors[i] = TextureColor.FromRGB5A3(rgb5a3);
+            colors[i] = TexturePixel.FromRGB5A3(rgb5a3);
         }
         // Construct palette
         Palette palette = new()
@@ -239,38 +180,24 @@ public record class Palette
         return palette;
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="indirectEncoding"></param>
-    /// <param name="palette"></param>
     internal static void WriteRGB5A3(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
     {
         // Write palette
         for (int i = 0; i < palette.Colors.Length; i++)
         {
-            ushort rgb5a3 = TextureColor.ToRGB5A3(palette.Colors[i]);
+            ushort rgb5a3 = TexturePixel.ToRGB5A3(palette.Colors[i]);
             writer.Write(rgb5a3);
         }
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <param name="indirectEncoding"></param>
-    /// <returns>
-    ///     
-    /// </returns>
     internal static Palette ReadRGBA8(EndianBinaryReader reader, IndirectEncoding indirectEncoding)
     {
         // Read palette colors
-        TextureColor[] colors = new TextureColor[indirectEncoding.MaxPaletteSize];
+        TexturePixel[] colors = new TexturePixel[indirectEncoding.MaxPaletteSize];
         for (int i = 0; i < colors.Length; i++)
         {
             uint rgba8 = reader.ReadUInt32();
-            colors[i] = new TextureColor(rgba8);
+            colors[i] = new TexturePixel(rgba8);
         }
         // Construct palette
         Palette palette = new()
@@ -283,12 +210,6 @@ public record class Palette
         return palette;
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="indirectEncoding"></param>
-    /// <param name="palette"></param>
     internal static void WriteRGBA8(EndianBinaryWriter writer, IndirectEncoding indirectEncoding, Palette palette)
     {
         // Write palette
@@ -300,7 +221,7 @@ public record class Palette
     }
 
     /// <summary>
-    ///     
+    ///     Map of <see cref="PaletteColorFormat"/> to <see cref="ReadPalette"/> function.
     /// </summary>
     public static readonly ImmutableDictionary<PaletteColorFormat, ReadPalette> MapColorFormatToRead =
     [
@@ -311,7 +232,7 @@ public record class Palette
     ];
 
     /// <summary>
-    ///     
+    ///     Map of <see cref="PaletteColorFormat"/> to <see cref="WritePalette"/> function.
     /// </summary>
     public static readonly ImmutableDictionary<PaletteColorFormat, WritePalette> MapColorFormatToWrite =
     [

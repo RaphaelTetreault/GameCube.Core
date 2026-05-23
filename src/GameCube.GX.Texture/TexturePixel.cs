@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace GameCube.GX.Texture;
 
@@ -7,7 +6,7 @@ namespace GameCube.GX.Texture;
 ///     Represents a pixel's color within a GameCube texture.
 /// </summary>
 [StructLayout(LayoutKind.Explicit)]
-public struct TextureColor
+public struct TexturePixel
 {
     /// <summary>
     ///     Raw color in RGBA8 format.
@@ -34,7 +33,7 @@ public struct TextureColor
     ///     Create a new color from <paramref name="raw"/> color RGBA data.
     /// </summary>
     /// <param name="raw">Raw color in RGBA format.</param>
-    public TextureColor(int raw)
+    public TexturePixel(int raw)
     {
         r = g = b = a = 0;
         this.raw = (uint)raw;
@@ -44,7 +43,7 @@ public struct TextureColor
     ///     Create a new color from <paramref name="raw"/> color RGBA data.
     /// </summary>
     /// <param name="raw">Raw color in RGBA format.</param>
-    public TextureColor(uint raw)
+    public TexturePixel(uint raw)
     {
         r = g = b = a = 0;
         this.raw = raw;
@@ -58,7 +57,7 @@ public struct TextureColor
     /// <param name="g">8-bit green color component.</param>
     /// <param name="b">8-bit blue color component.</param>
     /// <param name="a">8-bit alpha component.</param>
-    public TextureColor(byte r, byte g, byte b, byte a = 0xFF)
+    public TexturePixel(byte r, byte g, byte b, byte a = 0xFF)
     {
         raw = 0;
         this.r = r;
@@ -73,7 +72,7 @@ public struct TextureColor
     /// </summary>
     /// <param name="intensity">8-bit intensity (grayscale) value.</param>
     /// <param name="a">8-bit alpha component.</param>
-    public TextureColor(byte intensity, byte a = 0xFF)
+    public TexturePixel(byte intensity, byte a = 0xFF)
     {
         raw = 0;
         r = g = b = intensity;
@@ -81,9 +80,9 @@ public struct TextureColor
     }
 
 
-    public static readonly TextureColor Clear = new(  0,   0);
-    public static readonly TextureColor Black = new(  0, 255);
-    public static readonly TextureColor White = new(255, 255);
+    public static readonly TexturePixel Clear = new(  0,   0);
+    public static readonly TexturePixel Black = new(  0, 255);
+    public static readonly TexturePixel White = new(255, 255);
 
 
     /// <summary>
@@ -108,7 +107,7 @@ public struct TextureColor
     /// <returns>
     ///     Returns a new color derived from interpolating between <paramref name="c0"/> and <paramref name="c1"/> at <paramref name="time01"/>.
     /// </returns>
-    public static TextureColor Lerp(TextureColor c0, TextureColor c1, float time01)
+    public static TexturePixel Lerp(TexturePixel c0, TexturePixel c1, float time01)
     {
         float timeC0 = 1f - time01;
         float timeC1 = time01;
@@ -116,7 +115,7 @@ public struct TextureColor
         float g = c0.g * timeC0 + c1.g * timeC1;
         float b = c0.b * timeC0 + c1.b * timeC1;
         float a = c0.a * timeC0 + c1.a * timeC1;
-        TextureColor color = new((byte)r, (byte)g, (byte)b, (byte)a);
+        TexturePixel color = new((byte)r, (byte)g, (byte)b, (byte)a);
         return color;
     }
 
@@ -127,14 +126,14 @@ public struct TextureColor
     /// <returns>
     ///     Two 32-bit colors representing the <paramref name="i4Nybbles"/> value.
     /// </returns>
-    public static (TextureColor color0, TextureColor color1) FromI4(byte i4Nybbles)
+    public static (TexturePixel color0, TexturePixel color1) FromI4(byte i4Nybbles)
     {
         byte intensityHi4 = (byte)(i4Nybbles >>> 4   /*implicit*/); // & 0b_0000_1111
         byte intensityLo4 = (byte)(i4Nybbles >>> 0 & 0b_0000_1111);
         byte intensityHi = (byte)(intensityHi4 << 4 | intensityHi4);
         byte intensityLo = (byte)(intensityLo4 << 4 | intensityLo4);
-        TextureColor color0 = new(intensityHi);
-        TextureColor color1 = new(intensityLo);
+        TexturePixel color0 = new(intensityHi);
+        TexturePixel color1 = new(intensityLo);
         return (color0, color1);
     }
 
@@ -147,7 +146,7 @@ public struct TextureColor
     ///     An 8-bit value representing 2 colors <paramref name="c0"/>
     ///     and <paramref name="c1"/> in I4 format.
     /// </returns>
-    public static byte ToI4(TextureColor c0, TextureColor c1)
+    public static byte ToI4(TexturePixel c0, TexturePixel c1)
     {
         byte intensity0 = (byte)(c0.GetIntensity() >>> 0 & 0b_1111_0000);
         byte intensity1 = (byte)(c1.GetIntensity() >>> 4 | 0b_0000_1111);
@@ -162,13 +161,13 @@ public struct TextureColor
     /// <returns>
     ///     A 32-bit color representing the <paramref name="ia4"/> value.
     /// </returns>
-    public static TextureColor FromIA4(byte ia4)
+    public static TexturePixel FromIA4(byte ia4)
     {
         byte i4 = (byte)(ia4 >>> 4 & 0b_0000_1111);
         byte a4 = (byte)(ia4 >>> 0 & 0b_0000_1111);
         byte i = (byte)(i4 << 4 | i4);
         byte a = (byte)(a4 << 4 | a4);
-        TextureColor color = new(i, a);
+        TexturePixel color = new(i, a);
         return color;
     }
 
@@ -179,7 +178,7 @@ public struct TextureColor
     /// <returns>
     ///     An 8-bit value representing color <paramref name="c"/> in IA4 format.
     /// </returns>
-    public static byte ToIA4(TextureColor c)
+    public static byte ToIA4(TexturePixel c)
     {
         byte i = c.GetIntensity();
         byte i4 = (byte)(i >>> 4);
@@ -195,11 +194,11 @@ public struct TextureColor
     /// <returns>
     ///     A 32-bit color representing the <paramref name="ia8"/> value.
     /// </returns>
-    public static TextureColor FromIA8(ushort ia8)
+    public static TexturePixel FromIA8(ushort ia8)
     {
         byte i = (byte)(ia8 >>> 8);
         byte a = (byte)(ia8 >>> 0);
-        TextureColor color = new(i, a);
+        TexturePixel color = new(i, a);
         return color;
     }
 
@@ -210,7 +209,7 @@ public struct TextureColor
     /// <returns>
     ///     A 16-bit value representing color <paramref name="c"/> in IA8 format.
     /// </returns>
-    public static ushort ToIA8(TextureColor c)
+    public static ushort ToIA8(TexturePixel c)
     {
         byte i = c.GetIntensity();
         byte a = c.a;
@@ -225,7 +224,7 @@ public struct TextureColor
     /// <returns>
     ///     A 32-bit color representing the <paramref name="rgb565"/> value.
     /// </returns>
-    public static TextureColor FromRGB565(ushort rgb565)
+    public static TexturePixel FromRGB565(ushort rgb565)
     {
         byte r5 = (byte)(rgb565 >>> 11 /************/); // implicit truncation
         byte g6 = (byte)(rgb565 >>> 05 & 0b_0011_1111); // keep lowest 6 bits
@@ -236,7 +235,7 @@ public struct TextureColor
         byte r = (byte)(r5 << 3 | r5 >>> 2);
         byte g = (byte)(g6 << 2 | b5 >>> 4);
         byte b = (byte)(b5 << 3 | b5 >>> 2);
-        TextureColor color = new(r, g, b);
+        TexturePixel color = new(r, g, b);
         return color;
     }
 
@@ -247,7 +246,7 @@ public struct TextureColor
     /// <returns>
     ///     A 16-bit value representing color <paramref name="c"/> in RGB565 format.
     /// </returns>
-    public static ushort ToRGB565(TextureColor c)
+    public static ushort ToRGB565(TexturePixel c)
     {
         byte r5 = (byte)(c.r >>> 3);
         byte g6 = (byte)(c.g >>> 2);
@@ -263,7 +262,7 @@ public struct TextureColor
     /// <returns>
     ///     A 32-bit color representing the <paramref name="rgb5a3"/> value.
     /// </returns>
-    public static TextureColor FromRGB5A3(ushort rgb5a3)
+    public static TexturePixel FromRGB5A3(ushort rgb5a3)
     {
         byte r, g, b, a;
 
@@ -297,7 +296,7 @@ public struct TextureColor
             b = (byte)(b5 << 3 | b5 >>> 2);
             a = 0xFF; // alpha implied
         }
-        TextureColor color = new(r, g, b, a);
+        TexturePixel color = new(r, g, b, a);
         return color;
     }
     /// <summary>
@@ -307,7 +306,7 @@ public struct TextureColor
     /// <returns>
     ///     A 16-bit value representing color <paramref name="c"/> in RGB5A3 format.
     /// </returns>
-    public static ushort ToRGB5A3(TextureColor c)
+    public static ushort ToRGB5A3(TexturePixel c)
     {
         byte r, g, b, a;
         ushort rgb5a3;
@@ -341,6 +340,6 @@ public struct TextureColor
 
     public readonly override string ToString()
     {
-        return $"{nameof(TextureColor)}(R:{r:x2}, G:{g:x2}, B:{b:x2}, A:{a:x2})";
+        return $"{nameof(TexturePixel)}(R:{r:x2}, G:{g:x2}, B:{b:x2}, A:{a:x2})";
     }
 }

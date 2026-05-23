@@ -43,6 +43,7 @@ public static class IndirectTextureFormatExtensions
         /// <exception cref="System.ArgumentException">
         ///     Thrown if enum value is not defined.
         /// </exception>
+        [System.Diagnostics.Conditional("DEBUG")]
         public void Validate()
         {
             switch (indirectTextureFormat)

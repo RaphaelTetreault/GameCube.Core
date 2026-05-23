@@ -10,8 +10,8 @@ namespace GameCube.GX.Texture;
 /// </summary>
 public record class IndirectEncoding : IBlockEncoding
 {
-    public delegate IndirectBlock ReadIndirectBlock(EndianBinaryReader reader);
-    public delegate void WriteIndirectBlock(EndianBinaryWriter writer, IndirectBlock indirectBlock);
+    public delegate IndirectBlock ReadBlock(EndianBinaryReader reader);
+    public delegate void WriteBlock(EndianBinaryWriter writer, IndirectBlock indirectBlock);
 
     /// <summary>
     ///     The texture format used by this encoding.
@@ -21,12 +21,12 @@ public record class IndirectEncoding : IBlockEncoding
     /// <summary>
     ///     
     /// </summary>
-    public required byte BlockWidth { get; init; }
+    public required byte BlockPixelWidth { get; init; }
 
     /// <summary>
     ///     
     /// </summary>
-    public required byte BlockHeight { get; init; }
+    public required byte BlockPixelHeight { get; init; }
 
     /// <summary>
     ///     The number of bits used by this encoding to represent a single colour index.
@@ -46,20 +46,18 @@ public record class IndirectEncoding : IBlockEncoding
     /// <summary>
     ///     Which function to use to read an indirect block.
     /// </summary>
-    public required ReadIndirectBlock ReadBlock { get; init; }
+    public required IndirectEncoding.ReadBlock ReadIndirectBlock { get; init; }
 
     /// <summary>
     ///     Which function to use to write an indirect block.
     /// </summary>
-    public required WriteIndirectBlock WriteBlock { get; init; }
+    public required IndirectEncoding.WriteBlock WriteIndirectBlock { get; init; }
 
-
-    // PROPERTIES
 
     /// <summary>
     ///     How many indexes are in this indirect block.
     /// </summary>
-    public int IndexesPerBlock => BlockWidth * BlockHeight;
+    public int IndexesPerBlock => BlockPixelWidth * BlockPixelHeight;
 
     /// <summary>
     ///     The maximum index for a colours using this encoding.
@@ -68,29 +66,32 @@ public record class IndirectEncoding : IBlockEncoding
 
 
     /// <summary>
-    ///     
+    ///     Read <paramref name="blocksCount"/> number of indirect blocks from <paramref name="reader"/>
+    ///     using this encoding.
     /// </summary>
-    /// <param name="reader"></param>
-    /// <param name="blocksCount"></param>
+    /// <param name="reader">The binary reader to read from.</param>
+    /// <param name="blocksCount">The number of direct blocks to read.</param>
     /// <returns>
-    ///     
+    ///     Array of <paramref name="blocksCount"/> number of indirect blocks read from <paramref name="reader"/>.
     /// </returns>
     public IndirectBlock[] ReadBlocks(EndianBinaryReader reader, int blocksCount)
     {
         IndirectBlock[] directBlocks = new IndirectBlock[blocksCount];
         for (int i = 0; i < blocksCount; i++)
-            directBlocks[i] = ReadBlock.Invoke(reader);
+            directBlocks[i] = ReadIndirectBlock.Invoke(reader);
         return directBlocks;
     }
 
     /// <summary>
-    ///     
+    ///     Read number of indirect blocks required to construct <paramref name="pxWidth"/> by 
+    ///     <paramref name="pxHeight"/> from <paramref name="reader"/> using this encoding.
     /// </summary>
-    /// <param name="reader"></param>
-    /// <param name="pxWidth"></param>
-    /// <param name="pxHeight"></param>
+    /// <param name="reader">The binary reader to read from.</param>
+    /// <param name="pxWidth">Pixel width of texture.</param>
+    /// <param name="pxHeight">Pixel height of texture.</param>
     /// <returns>
-    ///     
+    ///     Array of indirect blocks read from <paramref name="reader"/> construct a
+    ///     <paramref name="pxWidth"/> by <paramref name="pxHeight"/> texture.
     /// </returns>
     public IndirectBlock[] ReadBlocks(EndianBinaryReader reader, int pxWidth, int pxHeight)
     {
@@ -99,14 +100,7 @@ public record class IndirectEncoding : IBlockEncoding
         return indirectBlocks;
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="expected"></param>
-    /// <param name="value"></param>
-    /// <exception cref="ArgumentException">
-    /// 
-    /// </exception>
+    [System.Diagnostics.Conditional("DEBUG")]
     internal static void AssertEncoding(IndirectEncoding expected, IndirectEncoding value)
     {
         // Assert types match
@@ -118,13 +112,6 @@ public record class IndirectEncoding : IBlockEncoding
         }
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <returns>
-    /// 
-    /// </returns>
     internal static IndirectBlock ReadCI4(EndianBinaryReader reader)
     {
         IndirectEncoding indirectEncoding = CI8;
@@ -142,11 +129,6 @@ public record class IndirectEncoding : IBlockEncoding
         return indirectBlock;
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="indirectBlock"></param>
     internal static void WriteCI4(EndianBinaryWriter writer, IndirectBlock indirectBlock)
     {
         // Assertions
@@ -164,13 +146,6 @@ public record class IndirectEncoding : IBlockEncoding
         }
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <returns>
-    /// 
-    /// </returns>
     internal static IndirectBlock ReadCI8(EndianBinaryReader reader)
     {
         IndirectEncoding indirectEncoding = CI4;
@@ -183,11 +158,6 @@ public record class IndirectEncoding : IBlockEncoding
         return indirectBlock;
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="indirectBlock"></param>
     internal static void WriteCI8(EndianBinaryWriter writer, IndirectBlock indirectBlock)
     {
         // Assertions
@@ -200,13 +170,6 @@ public record class IndirectEncoding : IBlockEncoding
         }
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <returns>
-    ///     
-    /// </returns>
     internal static IndirectBlock ReadCI14X2(EndianBinaryReader reader)
     {
         IndirectEncoding indirectEncoding = CI8;
@@ -219,11 +182,6 @@ public record class IndirectEncoding : IBlockEncoding
         return indirectBlock;
     }
 
-    /// <summary>
-    ///     
-    /// </summary>
-    /// <param name="writer"></param>
-    /// <param name="indirectBlock"></param>
     internal static void WriteCI14X2(EndianBinaryWriter writer, IndirectBlock indirectBlock)
     {
         // Assertions.
@@ -237,20 +195,19 @@ public record class IndirectEncoding : IBlockEncoding
     }
 
 
-
     /// <summary>
     ///     4-bit colour index.
     /// </summary>
     public static readonly IndirectEncoding CI4 = new()
     {
         IndirectFormat = IndirectTextureFormat.CI4,
-        BlockWidth = 8,
-        BlockHeight = 8,
+        BlockPixelWidth = 8,
+        BlockPixelHeight = 8,
         BitsPerIndex = 4,
         BytesPerBlock = 32, // 8 * 8 * 0.5(4bpp)
         MaxPaletteSize = 16,
-        ReadBlock = ReadCI4,
-        WriteBlock = WriteCI4,
+        ReadIndirectBlock = ReadCI4,
+        WriteIndirectBlock = WriteCI4,
     };
 
     /// <summary>
@@ -259,13 +216,13 @@ public record class IndirectEncoding : IBlockEncoding
     public static readonly IndirectEncoding CI8 = new()
     {
         IndirectFormat = IndirectTextureFormat.CI8,
-        BlockWidth = 8,
-        BlockHeight = 4,
+        BlockPixelWidth = 8,
+        BlockPixelHeight = 4,
         BitsPerIndex = 8,
         BytesPerBlock = 32, // 8 * 4 * 1(8bpp)
         MaxPaletteSize = 256,
-        ReadBlock = ReadCI8,
-        WriteBlock = WriteCI8,
+        ReadIndirectBlock = ReadCI8,
+        WriteIndirectBlock = WriteCI8,
     };
 
     /// <summary>
@@ -274,19 +231,19 @@ public record class IndirectEncoding : IBlockEncoding
     public static readonly IndirectEncoding CI14X2 = new()
     {
         IndirectFormat = IndirectTextureFormat.CI14X2,
-        BlockWidth = 4,
-        BlockHeight = 4,
+        BlockPixelWidth = 4,
+        BlockPixelHeight = 4,
         BitsPerIndex = 14,
         BytesPerBlock = 32, // 4 * 4 * 2(14bpp)
         MaxPaletteSize = 16_384,
-        ReadBlock = ReadCI14X2,
-        WriteBlock = WriteCI14X2,
+        ReadIndirectBlock = ReadCI14X2,
+        WriteIndirectBlock = WriteCI14X2,
     };
 
     /// <summary>
-    ///     
+    ///     Map of <see cref="IndirectTextureFormat"/> to <see cref="IndirectEncoding"/>.
     /// </summary>
-    public static readonly ImmutableDictionary<IndirectTextureFormat, IndirectEncoding> MapFormatToEncoding =
+    public static readonly ImmutableDictionary<IndirectTextureFormat, IndirectEncoding> MapIndirectFormatToEncoding =
     [
         new(IndirectTextureFormat.CI4, CI4),
         new(IndirectTextureFormat.CI8, CI8),
