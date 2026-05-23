@@ -42,17 +42,17 @@ public enum TextureFormat : byte
     RGBA8 = 6,
 
     /// <summary>
-    ///     4-bit colour index. Accompanies with colour paletted.
+    ///     4-bit color index. Accompanies with color paletted.
     /// </summary>
     CI4 = 8,
 
     /// <summary>
-    ///     8-bit colour index. Accompanies with colour paletted.
+    ///     8-bit color index. Accompanies with color paletted.
     /// </summary>
     CI8 = 9,
 
     /// <summary>
-    ///     14-bit colour index. Accompanies with colour paletted.
+    ///     14-bit color index. Accompanies with color paletted.
     /// </summary>
     CI14X2 = 10,
 
@@ -62,6 +62,9 @@ public enum TextureFormat : byte
     CMPR = 14
 }
 
+/// <summary>
+///     Extensions for <see cref="TextureFormat"/>.
+/// </summary>
 public static class TextureFormatExtensions
 {
     extension(TextureFormat textureFormat)

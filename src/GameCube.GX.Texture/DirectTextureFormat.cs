@@ -1,5 +1,8 @@
 ﻿namespace GameCube.GX.Texture;
 
+/// <summary>
+///     Subset of <see cref="TextureFormat"/> for direct color formats only.
+/// </summary>
 public enum DirectTextureFormat : byte
 {
     /// <summary>
@@ -44,6 +47,9 @@ public enum DirectTextureFormat : byte
     CMPR = 14
 }
 
+/// <summary>
+///     Extensions for <see cref="DirectTextureFormat"/>.
+/// </summary>
 public static class DirectTextureFormatExtensions
 {
     extension(DirectTextureFormat directTextureFormat)
@@ -74,7 +80,7 @@ public static class DirectTextureFormatExtensions
         {
             switch (directTextureFormat)
             {
-                // Valid direct colour formats
+                // Valid direct color formats
                 case DirectTextureFormat.CMPR:
                 case DirectTextureFormat.I4:
                 case DirectTextureFormat.I8:
@@ -88,7 +94,7 @@ public static class DirectTextureFormatExtensions
                 default:
                     string msg =
                         $"Invalid {nameof(DirectTextureFormat)} '{directTextureFormat}'. " +
-                        $"The format must be a direct colour format.";
+                        $"The format must be a direct color format.";
                     throw new System.ArgumentException(msg);
             }
         }

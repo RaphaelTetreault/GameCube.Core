@@ -8,7 +8,7 @@ using System.Collections.Immutable;
 namespace GameCube.GX.Texture;
 
 /// <summary>
-///     Representation of a GameCube direct-colour texture format encoding.
+///     Representation of a GameCube direct color texture format encoding.
 /// </summary>
 public record class DirectEncoding : IBlockEncoding
 {
@@ -38,7 +38,7 @@ public record class DirectEncoding : IBlockEncoding
 
 
     /// <summary>
-    ///     The texture format used by this encoding.
+    ///     The direct texture format used by this encoding.
     /// </summary>
     public required DirectTextureFormat DirectFormat { get; init; }
 
@@ -53,7 +53,7 @@ public record class DirectEncoding : IBlockEncoding
     public required byte BlockPixelHeight { get; init; }
 
     /// <summary>
-    ///     The number of bits used by this encoding to represent a single colour.
+    ///     The number of bits used by this encoding to represent a single color.
     /// </summary>
     public required byte BitsPerPixel { get; init; }
 
@@ -388,7 +388,7 @@ public record class DirectEncoding : IBlockEncoding
         var b = new byte[directEncoding.PixelsPerBlock];
         for (int i = 0; i < directEncoding.PixelsPerBlock; i++)
         {
-            var color = directBlock.Colors[i];
+            var color = directBlock.Pixels[i];
             a[i] = color.a;
             r[i] = color.r;
             g[i] = color.g;
@@ -506,7 +506,7 @@ public record class DirectEncoding : IBlockEncoding
             for (int qx = 0; qx < 2; qx++)
             {
                 // Get the 4x4 pixel subset
-                var colors = Get4x4SubBlockColors(directBlock.Colors.AsSpan(), qx, qy);
+                var colors = Get4x4SubBlockColors(directBlock.Pixels.AsSpan(), qx, qy);
                 // Convert from own format into that used by BCnEncoder
                 ColorRgba32[] colors32 = new ColorRgba32[16];
                 for (int i = 0; i < 16; i++)
@@ -645,7 +645,7 @@ public record class DirectEncoding : IBlockEncoding
     };
 
     /// <summary>
-    ///     Encoding format for '5-bit red, 6-bit green, and 5-bit blue' colour texture.
+    ///     Encoding format for '5-bit red, 6-bit green, and 5-bit blue' color texture.
     /// </summary>
     public static readonly DirectEncoding RGB565 = new()
     {
@@ -660,7 +660,7 @@ public record class DirectEncoding : IBlockEncoding
 
     /// <summary>
     ///     Encoding format for '5-bit red, 5-bit green, 5-bit blue, and 1-bit fixed alpha (1)'
-    ///                and also '4-bit red, 4-bit green, 4-bit blue, and 3-bit alpha (4th bit always 0)' colour texture.
+    ///                and also '4-bit red, 4-bit green, 4-bit blue, and 3-bit alpha (4th bit always 0)' color texture.
     /// </summary>
     public static readonly DirectEncoding RGB5A3 = new()
     {
@@ -674,7 +674,7 @@ public record class DirectEncoding : IBlockEncoding
     };
 
     /// <summary>
-    ///     Encoding format for '8-bit red, 8-bit green, 8-bit blue, and 8-bit alpha' colour texture.
+    ///     Encoding format for '8-bit red, 8-bit green, 8-bit blue, and 8-bit alpha' color texture.
     /// </summary>
     public static readonly DirectEncoding RGBA8 = new()
     {

@@ -1,5 +1,8 @@
 ﻿namespace GameCube.GX.Texture;
 
+/// <summary>
+///     Subset of <see cref="TextureFormat"/> for palette color formats only.
+/// </summary>
 public enum PaletteColorFormat : byte
 {
     /// <summary>
@@ -24,6 +27,9 @@ public enum PaletteColorFormat : byte
     RGBA8 = 6,
 }
 
+/// <summary>
+///     Extensions for <see cref="PaletteColorFormat"/>.
+/// </summary>
 public static class PaletteColorFormatExtensions
 {
     extension(PaletteColorFormat paletteColorFormat)
@@ -54,7 +60,7 @@ public static class PaletteColorFormatExtensions
         {
             switch (paletteColorFormat)
             {
-                // Valid indirect colour formats
+                // Valid indirect color formats
                 case PaletteColorFormat.IA8:
                 case PaletteColorFormat.RGB565:
                 case PaletteColorFormat.RGB5A3:
@@ -64,7 +70,7 @@ public static class PaletteColorFormatExtensions
                 default:
                     string msg =
                         $"Invalid {nameof(PaletteColorFormat)} '{paletteColorFormat}'. " +
-                        $"The format must be an indirect colour format.";
+                        $"The format must be an indirect color format.";
                     throw new System.ArgumentException(msg);
             }
         }

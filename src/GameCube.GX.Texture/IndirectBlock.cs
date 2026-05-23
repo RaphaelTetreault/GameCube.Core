@@ -4,7 +4,8 @@ using System.Collections.Immutable;
 namespace GameCube.GX.Texture;
 
 /// <summary>
-///     A colour block which is indirectly encoded using a colour-indexing format.
+///     An indirect color block which indirectly encodes pixel colors through index
+///     lookup into a <see cref="Palette"/>.
 /// </summary>
 public record class IndirectBlock
 {
@@ -14,17 +15,17 @@ public record class IndirectBlock
     public IndirectEncoding IndirectEncoding { get; init; }
 
     /// <summary>
-    ///     This block's indirect colour indexes.
+    ///     This block's indirect color indexes.
     /// </summary>
     public ImmutableArray<ushort> ColorIndexes { get; init; }
 
 
     /// <summary>
-    ///     Indexer to get indirect colour index.
+    ///     Indexer to get indirect color index.
     /// </summary>
-    /// <param name="i">The pixel's indirect colour index.</param>
+    /// <param name="i">The pixel's indirect color index.</param>
     /// <returns>
-    ///     Indirect colour index at the specified index within this block.
+    ///     Indirect color index at the specified index within this block.
     /// </returns>
     public ushort this[int i]
     {
@@ -32,12 +33,12 @@ public record class IndirectBlock
     }
 
     /// <summary>
-    ///     Indexer to get indirect colour index.
+    ///     Indexer to get indirect color index.
     /// </summary>
     /// <param name="x">The horizontal coordinate of the pixel in this block.</param>
     /// <param name="y">The vertical coordinate of the pixel in this block.</param>
     /// <returns>
-    ///     Indirect colour index at the specified index within this block.
+    ///     Indirect color index at the specified index within this block.
     /// </returns>
     public ushort this[int x, int y]
     {

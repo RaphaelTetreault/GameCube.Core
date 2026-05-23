@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 namespace GameCube.GX.Texture;
 
 /// <summary>
-///     Representation for a GameCube indexed-colour palette.
+///     Representation for a GameCube indexed-color palette.
 /// </summary>
 public record class Palette
 {
@@ -23,7 +23,7 @@ public record class Palette
     public required IndirectTextureFormat IndexFormat { get; init; }
 
     /// <summary>
-    ///     The colours used by this palette.
+    ///     The colors used by this palette.
     /// </summary>
     public required ImmutableArray<TexturePixel> Colors { get; init; }
 

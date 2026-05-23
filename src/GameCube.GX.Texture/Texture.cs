@@ -13,7 +13,6 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using SixLabors.ImageSharp.Processing.Processors.Dithering;
 using System.Collections.Immutable;
-using System.Linq;
 
 namespace GameCube.GX.Texture;
 
@@ -46,11 +45,11 @@ public class Texture
     public TexturePixel[] Pixels { get; private set; } = [];
 
     /// <summary>
-    ///     Indexer to get get/set a direct colour (pixel) within this texture.
+    ///     Indexer to get get/set a direct color (pixel) within this texture.
     /// </summary>
-    /// <param name="i">The direct colour (pixel) index in this texture.</param>
+    /// <param name="i">The direct color (pixel) index in this texture.</param>
     /// <returns>
-    ///     Direct colour (pixel) at the specified index within this block.
+    ///     Direct color (pixel) at the specified index within this block.
     /// </returns>
     public TexturePixel this[int i]
     {
@@ -59,12 +58,12 @@ public class Texture
     }
 
     /// <summary>
-    ///     Indexer to get get/set a direct colour pixel within this texture.
+    ///     Indexer to get get/set a direct color pixel within this texture.
     /// </summary>
     /// <param name="x">The horizontal coordinate of the pixel in this texture.</param>
     /// <param name="y">The vertical coordinate of the pixel in this texture.</param>
     /// <returns>
-    ///     Direct colour (pixel) at the specified coordinate within this block.
+    ///     Direct color (pixel) at the specified coordinate within this block.
     /// </returns>
     public TexturePixel this[int x, int y]
     {
@@ -97,7 +96,7 @@ public class Texture
     /// </summary>
     /// <param name="width">The texture's pixel width.</param>
     /// <param name="height">The texture's pixel height.</param>
-    /// <param name="color">The default colour of all pixels for the texture.</param>
+    /// <param name="color">The default color of all pixels for the texture.</param>
     public Texture(int width, int height, TexturePixel color)
     {
         Width = width;
@@ -437,7 +436,7 @@ public class Texture
         // Copy references of blocks from direct blocks
         ImmutableArray<TexturePixel>[] blocks = new ImmutableArray<TexturePixel>[blocksInfo.BlockCount];
         for (int i = 0; i < blocks.Length; i++)
-            blocks[i] = directBlocks[i].Colors;
+            blocks[i] = directBlocks[i].Pixels;
 
         // Construct texture from deswizzled blocks
         ImmutableArray<TexturePixel> texturePixels = DeswizzleBlocks(blocks, blocksInfo);
@@ -590,6 +589,7 @@ public class Texture
         return cropped;
     }
 
+    // TODO: collapse both Copy functions. eg. This one could be called inside the other or vice-versa.
     public static void Copy(Texture sourceTexture, Texture destinationTexture, int destinationOriginX = 0, int destinationOriginY = 0)
     {
         bool canFitX = destinationOriginX + sourceTexture.Width <= destinationTexture.Width;
@@ -641,11 +641,11 @@ public class Texture
     }
 
     /// <summary>
-    ///     
+    ///     Get this texture serialized as bytes.
     /// </summary>
-    /// <param name="directTextureFormat"></param>
+    /// <param name="directTextureFormat">The color format to encode the texture in.</param>
     /// <returns>
-    ///     
+    ///     New array of bytes of this texture encoded with <paramref name="directTextureFormat"/>.
     /// </returns>
     public byte[] GetRawBytes(DirectTextureFormat directTextureFormat)
     {
@@ -658,6 +658,5 @@ public class Texture
         writer.Close();
         return rawData;
     }
-
 
 }

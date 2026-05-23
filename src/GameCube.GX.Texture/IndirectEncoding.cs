@@ -6,7 +6,7 @@ using System.Text;
 namespace GameCube.GX.Texture;
 
 /// <summary>
-///     The base representation of a GameCube indirect-colour texture format encoding.
+///     Representation of a GameCube indirect color texture format encoding.
 /// </summary>
 public record class IndirectEncoding : IBlockEncoding
 {
@@ -19,17 +19,17 @@ public record class IndirectEncoding : IBlockEncoding
     public required IndirectTextureFormat IndirectFormat { get; init; }
 
     /// <summary>
-    ///     
+    ///     The pixel width of a block for this encoding.
     /// </summary>
     public required byte BlockPixelWidth { get; init; }
 
     /// <summary>
-    ///     
+    ///     The pixel height of a block for this encoding.
     /// </summary>
     public required byte BlockPixelHeight { get; init; }
 
     /// <summary>
-    ///     The number of bits used by this encoding to represent a single colour index.
+    ///     The number of bits used by this encoding to represent a single color index.
     /// </summary>
     public required byte BitsPerIndex { get; init; }
 
@@ -39,7 +39,7 @@ public record class IndirectEncoding : IBlockEncoding
     public required byte BytesPerBlock { get; init; }
 
     /// <summary>
-    ///     The maximum number of colours that can be represented using this encoding.
+    ///     The maximum number of colors that can be represented using this encoding.
     /// </summary>
     public required ushort MaxPaletteSize { get; init; }
 
@@ -60,7 +60,7 @@ public record class IndirectEncoding : IBlockEncoding
     public int IndexesPerBlock => BlockPixelWidth * BlockPixelHeight;
 
     /// <summary>
-    ///     The maximum index for a colours using this encoding.
+    ///     The maximum index for a colors using this encoding.
     /// </summary>
     public ushort MaxPaletteIndex => (ushort)(MaxPaletteSize - 1);
 
@@ -196,7 +196,7 @@ public record class IndirectEncoding : IBlockEncoding
 
 
     /// <summary>
-    ///     4-bit colour index.
+    ///     4-bit color index.
     /// </summary>
     public static readonly IndirectEncoding CI4 = new()
     {
@@ -211,7 +211,7 @@ public record class IndirectEncoding : IBlockEncoding
     };
 
     /// <summary>
-    ///     8-bit colour index.
+    ///     8-bit color index.
     /// </summary>
     public static readonly IndirectEncoding CI8 = new()
     {
@@ -226,7 +226,7 @@ public record class IndirectEncoding : IBlockEncoding
     };
 
     /// <summary>
-    ///     14-bit colour index.
+    ///     14-bit color index.
     /// </summary>
     public static readonly IndirectEncoding CI14X2 = new()
     {

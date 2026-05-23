@@ -1,5 +1,8 @@
 ﻿namespace GameCube.GX.Texture;
 
+/// <summary>
+///     Interface for both direct and indirect block encodings.
+/// </summary>
 public interface IBlockEncoding
 {
     /// <summary>

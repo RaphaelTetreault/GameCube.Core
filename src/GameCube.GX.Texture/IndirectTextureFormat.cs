@@ -1,23 +1,29 @@
 ﻿namespace GameCube.GX.Texture;
 
+/// <summary>
+///     Subset of <see cref="TextureFormat"/> for indirect color formats only.
+/// </summary>
 public enum IndirectTextureFormat : byte
 {
     /// <summary>
-    ///     4-bit colour index. Accompanies with colour paletted.
+    ///     4-bit color index. Accompanies with color paletted.
     /// </summary>
     CI4 = 8,
 
     /// <summary>
-    ///     8-bit colour index. Accompanies with colour paletted.
+    ///     8-bit color index. Accompanies with color paletted.
     /// </summary>
     CI8 = 9,
 
     /// <summary>
-    ///     14-bit colour index. Accompanies with colour paletted.
+    ///     14-bit color index. Accompanies with color paletted.
     /// </summary>
     CI14X2 = 10,
 }
 
+/// <summary>
+///     Extensions for <see cref="IndirectTextureFormat"/>.
+/// </summary>
 public static class IndirectTextureFormatExtensions
 {
     extension(IndirectTextureFormat indirectTextureFormat)
@@ -48,7 +54,7 @@ public static class IndirectTextureFormatExtensions
         {
             switch (indirectTextureFormat)
             {
-                // Valid indirect colour formats
+                // Valid indirect color formats
                 case IndirectTextureFormat.CI4:
                 case IndirectTextureFormat.CI8:
                 case IndirectTextureFormat.CI14X2:
@@ -57,7 +63,7 @@ public static class IndirectTextureFormatExtensions
                 default:
                     string msg =
                         $"Invalid {nameof(IndirectTextureFormat)} '{indirectTextureFormat}'. " +
-                        $"The format must be an indirect colour format.";
+                        $"The format must be an indirect color format.";
                     throw new System.ArgumentException(msg);
             }
         }
