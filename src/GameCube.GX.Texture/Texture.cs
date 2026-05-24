@@ -1,4 +1,6 @@
-﻿// TODO: implement own quantization
+﻿// Invaluable resource:
+// https://wiki.tockdom.com/wiki/Image_Formats
+// TODO: implement own quantization
 // https://en.wikipedia.org/wiki/Median_cut
 // https://en.wikipedia.org/wiki/K-means_clustering
 // And consider where dithering fits in?
@@ -19,9 +21,6 @@ namespace GameCube.GX.Texture;
 /// <summary>
 ///     A GameCube GX texture.
 /// </summary>
-/// <remarks>
-///     Invaluable resource: <see href="https://wiki.tockdom.com/wiki/Image_Formats"></see>
-/// </remarks>
 public class Texture
 {
     private readonly record struct BlockOrigin(int X, int Y);
@@ -45,11 +44,11 @@ public class Texture
     public TexturePixel[] Pixels { get; private set; } = [];
 
     /// <summary>
-    ///     Indexer to get get/set a direct color (pixel) within this texture.
+    ///     Indexer to get get/set a pixel within this texture.
     /// </summary>
-    /// <param name="i">The direct color (pixel) index in this texture.</param>
+    /// <param name="i">The pixel index in this texture.</param>
     /// <returns>
-    ///     Direct color (pixel) at the specified index within this block.
+    ///     Pixel at the specified index within this block.
     /// </returns>
     public TexturePixel this[int i]
     {
@@ -58,12 +57,12 @@ public class Texture
     }
 
     /// <summary>
-    ///     Indexer to get get/set a direct color pixel within this texture.
+    ///     Indexer to get get/set a pixel within this texture.
     /// </summary>
     /// <param name="x">The horizontal coordinate of the pixel in this texture.</param>
     /// <param name="y">The vertical coordinate of the pixel in this texture.</param>
     /// <returns>
-    ///     Direct color (pixel) at the specified coordinate within this block.
+    ///     Pixel at the specified coordinate within this block.
     /// </returns>
     public TexturePixel this[int x, int y]
     {
@@ -78,8 +77,7 @@ public class Texture
     public Texture() { }
 
     /// <summary>
-    ///     Create a new texture of <paramref name="width"/> by <paramref name="height"/> size
-    ///     of the specified <paramref name="format"/>.
+    ///     Create a new texture of <paramref name="width"/> by <paramref name="height"/> size.
     /// </summary>
     /// <param name="width">The texture's pixel width.</param>
     /// <param name="height">The texture's pixel height.</param>
@@ -92,7 +90,7 @@ public class Texture
 
     /// <summary>
     ///     Create a new texture of <paramref name="width"/> by <paramref name="height"/> size
-    ///     of the specified <paramref name="format"/> whose pixel contents are all <paramref name="color"/>.
+    ///     whose pixel contents are all <paramref name="color"/>.
     /// </summary>
     /// <param name="width">The texture's pixel width.</param>
     /// <param name="height">The texture's pixel height.</param>
@@ -131,7 +129,8 @@ public class Texture
 
 
     /// <summary>
-    ///     Bounded meaning a copy over edge returns default value for copy type.
+    ///     Copy area from source array as if it were 2 dimensional. Copy is bounded 
+    ///     meaning a copy over edge returns default value for copy type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">Type to copy.</typeparam>
     /// <param name="src">Source array.</param>
@@ -142,15 +141,19 @@ public class Texture
     /// <param name="width">Width of copy.</param>
     /// <param name="height">Height of copy.</param>
     /// <returns>
-    ///     
+    ///     Array of length <paramref name="width"/>*<paramref name="height"/> from 
+    ///     (<paramref name="srcOriginX"/>, <paramref name="srcOriginY"/>) which is
+    ///     a copy of contents <paramref name="src"/>. If copy exceeds bounds 
+    ///     <paramref name="srcWidth"/> or <paramref name="srcHeight"/>, then the
+    ///     default value for <typeparamref name="T"/> will be used.
     /// </returns>
-    internal static T[] CopyArea<T>(ReadOnlySpan<T> src, int srcWidth, int srcHeight, int srcOriginX, int srcOriginY, int width, int height)
+    private static T[] CopyArea<T>(ReadOnlySpan<T> src, int srcWidth, int srcHeight, int srcOriginX, int srcOriginY, int width, int height)
     {
         // Create array "slice"
         int size = width * height;
         T[] copy = new T[size];
 
-        // Figure out how many pixels to copy over. On smaller textures (eg: 4x2), outside region is black.
+        // Figure out how many elements to copy over. eg. Pixels. On smaller textures (eg: 4x2), outside region is black.
         // In other words, this "clamps" the copy and leaves out-of-bounds indices unset (black pixels).
         int nPixelsX = Math.Min(width, srcWidth - srcOriginX);
         int nPixelsY = Math.Min(height, srcHeight - srcOriginY);
@@ -174,12 +177,13 @@ public class Texture
         return copy;
     }
 
-    public static TexturePixel[] CopyArea(Texture texture, int srcOriginX, int srcOriginY, int dstWidth, int dstHeight)
-    {
-        TexturePixel[] copy = CopyArea(texture.Pixels, texture.Width, texture.Height, srcOriginX, srcOriginY, dstWidth, dstHeight);
-        return copy;
-    }
-
+    /// <summary>
+    ///     Get origin points for each block in a texture given <paramref name="blocksInfo"/>.
+    /// </summary>
+    /// <param name="blocksInfo"></param>
+    /// <returns>
+    ///     Array of origins for each block.
+    /// </returns>
     private static BlockOrigin[] GetBlockOrigins(TextureBlocksInfo blocksInfo)
     {
         // Create origin for each block within texture
@@ -242,29 +246,25 @@ public class Texture
             indirectEncoding.WriteIndirectBlock(writer, indirectBlock);
     }
 
-    public static DirectBlock[] CreateDirectColorBlocksFromTexture(Texture texture, DirectEncoding directEncoding, out TextureBlocksInfo blocksInfo)
+    public static DirectBlock[] CreateDirectColorBlocksFromTexture(Texture texture, DirectEncoding directEncoding)
     {
         // 
-        blocksInfo = TextureBlocksInfo.FromPixelDimensions(texture.Width, texture.Height, directEncoding);
+        TextureBlocksInfo blocksInfo = TextureBlocksInfo.FromPixelDimensions(texture.Width, texture.Height, directEncoding);
         BlockOrigin[] blockOrigins = GetBlockOrigins(blocksInfo);
         DirectBlock[] blocks = new DirectBlock[blocksInfo.BlockCount];
-        //
-        Assert.IsTrue(blocks.Length == blockOrigins.Length);
 
         // 
         for (int i = 0; i < blockOrigins.Length; i++)
         {
             BlockOrigin blockOrigin = blockOrigins[i];
-            TexturePixel[] pixels = CopyArea(texture, blockOrigin.X, blockOrigin.Y, directEncoding.BlockPixelHeight, directEncoding.BlockPixelHeight);
+            TexturePixel[] pixels = CopyArea(texture.Pixels, texture.Width, texture.Height, blockOrigin.X, blockOrigin.Y, directEncoding.BlockPixelHeight, directEncoding.BlockPixelHeight);
             blocks[i] = new(directEncoding, pixels);
         }
 
         return blocks;
     }
-    public static DirectBlock[] CreateDirectColorBlocksFromTexture(Texture texture, DirectEncoding directEncoding)
-        => CreateDirectColorBlocksFromTexture(texture, directEncoding, out _);
 
-    public static (IndirectBlock[] blocks, Palette palette) CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, IndirectEncoding indirectEncoding, PaletteColorFormat paletteFormat, out TextureBlocksInfo blocksInfo)
+    public static (IndirectBlock[] blocks, Palette palette) CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, IndirectEncoding indirectEncoding, PaletteColorFormat paletteFormat)
     {
         paletteFormat.Validate();
         // limitations of image sharp
@@ -274,11 +274,9 @@ public class Texture
         }
 
         // 
-        blocksInfo = TextureBlocksInfo.FromPixelDimensions(texture.Width, texture.Height, indirectEncoding);
+        TextureBlocksInfo blocksInfo = TextureBlocksInfo.FromPixelDimensions(texture.Width, texture.Height, indirectEncoding);
         BlockOrigin[] blockOrigins = GetBlockOrigins(blocksInfo);
         IndirectBlock[] blocks = new IndirectBlock[blocksInfo.BlockCount];
-        //
-        Assert.IsTrue(blocks.Length == blockOrigins.Length);
 
         // init some settings
         var configuration = new Configuration() { };
@@ -326,10 +324,15 @@ public class Texture
 
         return (blocks, palette);
     }
-    public static (IndirectBlock[] blocks, Palette palette) CreateIndirectColorBlocksAndPaletteFromTexture(Texture texture, IndirectEncoding indirectEncoding, PaletteColorFormat paletteFormat)
-        => CreateIndirectColorBlocksAndPaletteFromTexture(texture, indirectEncoding, paletteFormat, out _);
 
-    private static Image<Rgba32> ToImage(Texture sourceTexture)
+    /// <summary>
+    ///     Convert texture to image.
+    /// </summary>
+    /// <param name="sourceTexture"></param>
+    /// <returns>
+    ///     
+    /// </returns>
+    public static Image<Rgba32> ToImage(Texture sourceTexture)
     {
         Image<Rgba32> image = new(sourceTexture.Width, sourceTexture.Height);
 
@@ -414,13 +417,11 @@ public class Texture
     }
 
     /// <summary>
-    ///     Create a texture from an array of <paramref name="directBlocks"/> where <paramref name="blocksCountHorizontal"/>
-    ///     defines the number of blocks across the texture width and <paramref name="blocksCountVertical"/> defines the number
-    ///     of blocks across the texture height.
+    ///     Create a texture from an array of <paramref name="directBlocks"/> where <paramref name="blocksInfo"/>
+    ///     defines the configuration of blocks for the texture.
     /// </summary>
-    /// <param name="directBlocks">The source texture blocks to construct the texture with.</param>
-    /// <param name="blocksCountHorizontal">The number of blocks along the horizontal axis.</param>
-    /// <param name="blocksCountVertical">The number of blocks along the vertical axis.</param>
+    /// <param name="directBlocks">The direct blocks to construct the texture with.</param>
+    /// <param name="blocksInfo">Information about the configuration of blocks.</param>
     /// <returns>
     ///     A new texture created from the source <paramref name="directBlocks"/>.
     /// </returns>
@@ -449,6 +450,19 @@ public class Texture
         return texture;
     }
 
+    /// <summary>
+    ///     Create a texture from an array of <paramref name="indirectBlocks"/> 
+    ///     and <paramref name="palette"/> where <paramref name="blocksInfo"/>
+    ///     defines the configuration of blocks for the texture.
+    /// </summary>
+    /// <param name="indirectBlocks">The indirect blocks to construct the texture with.</param>
+    /// <param name="palette">The palette for the indirect blocks.</param>
+    /// <param name="blocksInfo">Information about the configuration of blocks.</param>
+    /// <returns>
+    ///     A new texture created from the source <paramref name="indirectBlocks"/>
+    ///     and <paramref name="palette"/>.
+    /// </returns>
+    /// <exception cref="ArgumentException"></exception>
     public static Texture FromIndirectBlocksAndPalette(IndirectBlock[] indirectBlocks, Palette palette, TextureBlocksInfo blocksInfo)
     {
         // Sanity check
@@ -472,19 +486,27 @@ public class Texture
             Pixels = [.. texturePixels],
         };
         return texture;
+
+        // Index into palette and construct pixel colors.
+        static ImmutableArray<TexturePixel> IndirectBlocksAndPaletteToTextureColors(IndirectBlock indirectBlocks, Palette palette)
+        {
+            TexturePixel[] colors = new TexturePixel[indirectBlocks.ColorIndexes.Length];
+            for (int i = 0; i < colors.Length; i++)
+                colors[i] = palette.Colors[indirectBlocks.ColorIndexes[i]];
+            ImmutableArray<TexturePixel> value = ImmutableArray.Create(colors);
+            return value;
+        }
     }
 
-
-    public static ImmutableArray<TexturePixel> IndirectBlocksAndPaletteToTextureColors(IndirectBlock indirectBlocks, Palette palette)
-    {
-        TexturePixel[] colors = new TexturePixel[indirectBlocks.ColorIndexes.Length];
-        for (int i = 0; i < colors.Length; i++)
-            colors[i] = palette.Colors[indirectBlocks.ColorIndexes[i]];
-        ImmutableArray<TexturePixel> value = ImmutableArray.Create(colors);
-        return value;
-    }
-
-    public static ImmutableArray<TexturePixel> DeswizzleBlocks(ReadOnlySpan<ImmutableArray<TexturePixel>> blocks, TextureBlocksInfo blocksInfo)
+    /// <summary>
+    ///     Convert from block-order to pixel-order.
+    /// </summary>
+    /// <param name="blocks">The texture blocks.</param>
+    /// <param name="blocksInfo">Information about the blocks.</param>
+    /// <returns>
+    ///     
+    /// </returns>
+    private static ImmutableArray<TexturePixel> DeswizzleBlocks(ReadOnlySpan<ImmutableArray<TexturePixel>> blocks, TextureBlocksInfo blocksInfo)
     {
         // GOAL: Linearize texture pixels.
         // HOW: We will step through in this over to copy the top line of pixels from each block into the destination.
@@ -590,6 +612,15 @@ public class Texture
     }
 
     // TODO: collapse both Copy functions. eg. This one could be called inside the other or vice-versa.
+
+    /// <summary>
+    ///     
+    /// </summary>
+    /// <param name="sourceTexture"></param>
+    /// <param name="destinationTexture"></param>
+    /// <param name="destinationOriginX"></param>
+    /// <param name="destinationOriginY"></param>
+    /// <exception cref="ArgumentException"></exception>
     public static void Copy(Texture sourceTexture, Texture destinationTexture, int destinationOriginX = 0, int destinationOriginY = 0)
     {
         bool canFitX = destinationOriginX + sourceTexture.Width <= destinationTexture.Width;
@@ -615,7 +646,6 @@ public class Texture
             }
         }
     }
-
 
     /// <summary>
     ///     Compute the max number of mipmaps this a texture of size
