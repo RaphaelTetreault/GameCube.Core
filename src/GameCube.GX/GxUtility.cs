@@ -310,7 +310,7 @@ public static class GXUtility
         switch (compType)
         {
             case GXComponentType.GX_RGB565: return 2;
-            case GXComponentType.GX_RGB8: return 1;
+            case GXComponentType.GX_RGB8: return 3;
             case GXComponentType.GX_RGBX8: return 4;
             case GXComponentType.GX_RGBA4: return 2;
             case GXComponentType.GX_RGBA6: return 3;
